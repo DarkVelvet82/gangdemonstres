@@ -1,6 +1,8 @@
 # Configuration
 config/database.php
+!config/database.example.php
 wp-config.php
+install.php
 
 # Uploads
 assets/uploads/*
