@@ -27,18 +27,18 @@ jobs:
           RewriteEngine On
           RewriteBase /
 
-          # Serve existing files/dirs immediately
-          RewriteCond %{REQUEST_URI} !^/gang-de-monstres-standalone/
-          RewriteCond %{REQUEST_FILENAME} -f [OR]
-          RewriteCond %{REQUEST_FILENAME} -d
-          RewriteRule ^ - [L]
+          # Home route first (avoid 403 on existing dir root)
+          RewriteRule ^$ gang-de-monstres-standalone/public/ [L]
 
           # Map assets and API to the app folder
           RewriteRule ^assets/(.*)$ gang-de-monstres-standalone/assets/$1 [L]
           RewriteRule ^api/(.*)$ gang-de-monstres-standalone/api/$1 [L,QSA]
 
-          # Home route
-          RewriteRule ^$ gang-de-monstres-standalone/public/ [L]
+          # Serve existing files/dirs immediately (except we already handled root)
+          RewriteCond %{REQUEST_URI} !^/gang-de-monstres-standalone/
+          RewriteCond %{REQUEST_FILENAME} -f [OR]
+          RewriteCond %{REQUEST_FILENAME} -d
+          RewriteRule ^ - [L]
 
           # Fallback: everything else from app public
           RewriteRule ^(.*)$ gang-de-monstres-standalone/public/$1 [L,QSA]
