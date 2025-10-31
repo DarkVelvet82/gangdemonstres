@@ -1,19 +1,18 @@
 <?php
-// config/database.php - Configuration base de données
+// config/database.php - Configuration base de donnees
 
-// Détection de l'environnement
-$is_local = file_exists(__DIR__ . '/../wp-config.php');
+// Detecter l'environnement
+$rootPublic = dirname(__DIR__, 2); // remonte jusqu'a app/public
+$is_local = file_exists($rootPublic . '/wp-config.php');
 
 if ($is_local) {
     // ========= ENVIRONNEMENT LOCAL =========
-    // Charger la config depuis wp-config.php parent si disponible
-    $wp_config_path = dirname(dirname(__DIR__)) . '/wp-config.php';
+    $wp_config_path = $rootPublic . '/wp-config.php';
     if (file_exists($wp_config_path)) {
-        require_once $wp_config_path;
+        require_once $wp_config_path; // peut definir DB_NAME/DB_USER/DB_PASSWORD/DB_HOST
     }
 
-    // Vérifier si les constantes DB sont définies, sinon utiliser valeurs par défaut Local
-    if (!defined('DB_HOST')) define('DB_HOST', 'localhost:10023');
+    // Valeurs par defaut pour Local (si WP ne fournit pas)
     if (!defined('DB_NAME')) define('DB_NAME', 'local');
     if (!defined('DB_USER')) define('DB_USER', 'root');
     if (!defined('DB_PASS')) {
@@ -23,9 +22,11 @@ if ($is_local) {
             define('DB_PASS', 'root');
         }
     }
+    // Ne pas se fier a DB_HOST de WP (souvent sans port). On force 127.0.0.1:10023
+    if (!defined('DB_HOST')) define('DB_HOST', '127.0.0.1:10023');
 
-    define('APP_URL', 'http://gang-de-monstres.local/gang-de-monstres-standalone/');
-    define('DEBUG_MODE', true);
+    if (!defined('APP_URL')) define('APP_URL', 'http://gang-de-monstres.local/gang-de-monstres-standalone/');
+    if (!defined('DEBUG_MODE')) define('DEBUG_MODE', true);
 
 } else {
     // ========= ENVIRONNEMENT PRODUCTION (HOSTINGER) =========
@@ -44,21 +45,22 @@ define('APP_VERSION', '2.0.0');
 define('SESSION_TIMEOUT', 3600);
 define('LOG_ERRORS', true);
 
-// Préfixe des tables
+// Prefixe des tables
 define('DB_PREFIX', 'wp_objectif_');
 
 // Fuseau horaire
 date_default_timezone_set('Europe/Paris');
 
-// Connexion à la base de données
+// Connexion a la base de donnees
 try {
-    if (strpos(DB_HOST, ':') !== false) {
-        // Local avec port
-        list($host, $port) = explode(':', DB_HOST);
+    if ($is_local) {
+        // Force IP + port Local pour eviter les sockets
+        $dsn = 'mysql:host=127.0.0.1;port=10023;dbname=' . DB_NAME . ';charset=utf8mb4';
+    } elseif (strpos(DB_HOST, ':') !== false) {
+        list($host, $port) = explode(':', DB_HOST, 2);
         $dsn = "mysql:host={$host};port={$port};dbname=" . DB_NAME . ";charset=utf8mb4";
     } else {
-        // Production sans port
-        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+        $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
     }
 
     $pdo = new PDO($dsn, DB_USER, DB_PASS);
@@ -68,11 +70,13 @@ try {
 
 } catch (PDOException $e) {
     if (DEBUG_MODE) {
-        die("Erreur de connexion : " . $e->getMessage());
+        die('Erreur de connexion: ' . $e->getMessage());
     } else {
-        error_log("DB Connection Error: " . $e->getMessage());
-        die("Erreur de connexion à la base de données");
+        error_log('DB Connection Error: ' . $e->getMessage());
+        die('Erreur de connexion a la base de donnees');
     }
 }
 
 return $pdo;
+?>
+
