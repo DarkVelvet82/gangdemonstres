@@ -35,18 +35,18 @@ if ($is_local) {
     define('DB_USER', 'u282641111_theogang');
     define('DB_PASS', 'L8Wh3cBKmQ9q');
 
-    define('APP_URL', 'https://gangdemonstres.com/');
-    define('DEBUG_MODE', false);
+    if (!defined('APP_URL')) define('APP_URL', 'https://gangdemonstres.com/');
+    if (!defined('DEBUG_MODE')) define('DEBUG_MODE', false);
 }
 
 // Configuration commune
-define('APP_NAME', 'Gang de Monstres - Objectifs Multijoueur');
-define('APP_VERSION', '2.0.0');
-define('SESSION_TIMEOUT', 3600);
-define('LOG_ERRORS', true);
+if (!defined('APP_NAME')) define('APP_NAME', 'Gang de Monstres - Objectifs Multijoueur');
+if (!defined('APP_VERSION')) define('APP_VERSION', '2.0.0');
+if (!defined('SESSION_TIMEOUT')) define('SESSION_TIMEOUT', 3600);
+if (!defined('LOG_ERRORS')) define('LOG_ERRORS', true);
 
 // Prefixe des tables
-define('DB_PREFIX', 'wp_objectif_');
+if (!defined('DB_PREFIX')) define('DB_PREFIX', 'wp_objectif_');
 
 // Fuseau horaire
 date_default_timezone_set('Europe/Paris');
@@ -78,5 +78,3 @@ try {
 }
 
 return $pdo;
-?>
-
