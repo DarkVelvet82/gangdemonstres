@@ -24,6 +24,7 @@ jobs:
 
           # Root .htaccess for clean URLs on Hostinger
           cat > dist/.htaccess <<'HTACC'
+          AddDefaultCharset UTF-8
           RewriteEngine On
           RewriteBase /
 
