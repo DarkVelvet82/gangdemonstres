@@ -11,9 +11,7 @@ function install_database() {
         $pdo->exec("CREATE TABLE IF NOT EXISTS " . DB_PREFIX . "types (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
-            slug VARCHAR(100) NOT NULL UNIQUE,
-            image_url TEXT NULL,
-            emoji VARCHAR(10) NULL,
+            image_url TEXT NOT NULL,
             display_order INT DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
@@ -22,7 +20,6 @@ function install_database() {
         $pdo->exec("CREATE TABLE IF NOT EXISTS " . DB_PREFIX . "game_sets (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(200) NOT NULL,
-            slug VARCHAR(200) NOT NULL UNIQUE,
             description TEXT NULL,
             is_base_game TINYINT(1) DEFAULT 0,
             display_order INT DEFAULT 0,
@@ -129,31 +126,8 @@ function insert_default_data() {
         return;
     }
 
-    // Types par défaut
-    $pdo->exec("INSERT INTO " . DB_PREFIX . "types (name, slug, emoji, display_order) VALUES
-        ('Faucheuse', 'faucheuse', '💀', 1),
-        ('Garou', 'garou', '🐺', 2),
-        ('Citrouille', 'citrouille', '🎃', 3)");
-
-    $faucheuse_id = $pdo->lastInsertId();
-
-    // Récupérer les IDs
-    $stmt = $pdo->query("SELECT id FROM " . DB_PREFIX . "types ORDER BY id ASC");
-    $type_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-    list($faucheuse_id, $garou_id, $citrouille_id) = $type_ids;
-
-    // Jeu de base
-    $pdo->exec("INSERT INTO " . DB_PREFIX . "game_sets (name, slug, description, is_base_game, display_order) VALUES
-        ('Jeu de Base', 'jeu-de-base', 'Version de base du jeu', 1, 1)");
-
-    $base_game_id = $pdo->lastInsertId();
-
-    // Associer les types au jeu de base
-    $pdo->exec("INSERT INTO " . DB_PREFIX . "set_types (game_set_id, type_id, is_limited, max_quantity) VALUES
-        ($base_game_id, $faucheuse_id, 0, NULL),
-        ($base_game_id, $garou_id, 0, NULL),
-        ($base_game_id, $citrouille_id, 1, 2)");
+    // Note: Les types et jeux doivent maintenant être créés via l'interface admin
+    // car les types nécessitent des images uploadées
 
     // Configuration de difficulté par défaut
     $difficulties = [

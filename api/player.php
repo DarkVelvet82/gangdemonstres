@@ -90,18 +90,20 @@ function generate_objective() {
         send_json_response(false, [], "Aucun type d'objectif configuré pour ce jeu");
     }
 
-    // Créer les pictos
+    // Créer les pictos (utilise l'ID comme clé maintenant)
     $pictos_v2 = [];
     foreach ($available_types as $type) {
         if (!empty($type['image_url'])) {
-            $pictos_v2[$type['slug']] = [
+            $pictos_v2[$type['id']] = [
                 'type' => 'image',
-                'value' => $type['image_url']
+                'value' => $type['image_url'],
+                'name' => $type['name']
             ];
         } else {
-            $pictos_v2[$type['slug']] = [
+            $pictos_v2[$type['id']] = [
                 'type' => 'emoji',
-                'value' => $type['emoji']
+                'value' => $type['emoji'] ?? '',
+                'name' => $type['name']
             ];
         }
     }
@@ -165,7 +167,7 @@ function generate_objective() {
     shuffle($available_for_selection);
     $selected_types = array_slice($available_for_selection, 0, $types_count);
 
-    // Générer l'objectif
+    // Générer l'objectif (utilise l'ID comme clé maintenant)
     $objectif = [];
     foreach ($selected_types as $type) {
         if ($type['is_limited'] && $type['max_quantity']) {
@@ -174,7 +176,7 @@ function generate_objective() {
             $quantity = rand($min_quantity, $max_quantity);
         }
 
-        $objectif[$type['slug']] = $quantity;
+        $objectif[$type['id']] = $quantity;
     }
 
     $objectif_json = json_encode($objectif);

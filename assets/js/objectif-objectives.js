@@ -88,20 +88,22 @@ window.ObjectifObjectives = (function($) {
         let objectiveItems = '';
 
         if (typeof objective === 'object' && objective !== null) {
-            for (const [type, quantity] of Object.entries(objective)) {
-                const pictoData = pictos[type];
+            for (const [typeId, quantity] of Object.entries(objective)) {
+                const pictoData = pictos[typeId];
                 let pictoDisplay = '❓';
-                
+                let typeName = 'Type inconnu';
+
                 if (pictoData) {
+                    // Utiliser le nom fourni par l'API
+                    typeName = pictoData.name || 'Type inconnu';
+
                     if (pictoData.type === 'image') {
-                        pictoDisplay = `<img src="${pictoData.value}" alt="${type}" class="objective-icon-img" />`;
+                        pictoDisplay = `<img src="${pictoData.value}" alt="${typeName}" class="objective-icon-img" />`;
                     } else {
                         pictoDisplay = pictoData.value;
                     }
                 }
-                
-                const typeName = type.charAt(0).toUpperCase() + type.slice(1);
-                
+
                 objectiveItems += `
                     <div class="objective-item">
                         <div class="objective-icon">${pictoDisplay}</div>

@@ -15,6 +15,7 @@ $active_games = (int) $pdo->query("SELECT COUNT(*) FROM " . DB_PREFIX . "games W
 $total_players = (int) $pdo->query("SELECT COUNT(*) FROM " . DB_PREFIX . "players WHERE used = 1")->fetchColumn();
 $total_types = (int) $pdo->query("SELECT COUNT(*) FROM " . DB_PREFIX . "types")->fetchColumn();
 $total_game_sets = (int) $pdo->query("SELECT COUNT(*) FROM " . DB_PREFIX . "game_sets")->fetchColumn();
+$total_cards = (int) $pdo->query("SELECT COUNT(*) FROM " . DB_PREFIX . "cards")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -58,6 +59,7 @@ $total_game_sets = (int) $pdo->query("SELECT COUNT(*) FROM " . DB_PREFIX . "game
             <a href="index.php" class="active">Dashboard</a>
             <a href="types.php">Types d'objectifs</a>
             <a href="games.php">Jeux & Extensions</a>
+            <a href="cards.php">Cartes</a>
             <a href="difficulty.php">Difficultés</a>
             <a href="stats.php">Statistiques</a>
         </div>
@@ -92,6 +94,12 @@ $total_game_sets = (int) $pdo->query("SELECT COUNT(*) FROM " . DB_PREFIX . "game
                 <div class="number"><?php echo $total_game_sets; ?></div>
                 <div class="label">Jeux configurés</div>
             </div>
+
+            <div class="stat-card">
+                <div class="icon">Cartes</div>
+                <div class="number"><?php echo $total_cards; ?></div>
+                <div class="label">Cartes créées</div>
+            </div>
         </div>
 
         <div style="background:white; padding:20px; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,.1);">
@@ -100,6 +108,7 @@ $total_game_sets = (int) $pdo->query("SELECT COUNT(*) FROM " . DB_PREFIX . "game
             <ul style="margin-top: 20px; line-height: 2;">
                 <li><strong>Types d'objectifs:</strong> Gérer les types de monstres et leurs icônes</li>
                 <li><strong>Jeux & Extensions:</strong> Configurer les jeux de base et les extensions</li>
+                <li><strong>Cartes:</strong> Base de données des cartes du jeu (monstres et coups bas)</li>
                 <li><strong>Difficultés:</strong> Paramétrer les niveaux de difficulté</li>
                 <li><strong>Statistiques:</strong> Voir les performances et les scores</li>
             </ul>
