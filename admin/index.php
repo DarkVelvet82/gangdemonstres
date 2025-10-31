@@ -1,16 +1,16 @@
-<?php
+﻿<?php
 session_start();
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 
-// Vérifier l'authentification
+// VÃ©rifier l'authentification
 if (!isset($_SESSION['admin_logged_in']) || !$_SESSION['admin_logged_in']) {
     header('Location: login.php');
     exit;
 }
 
-// Récupérer les statistiques
+// RÃ©cupÃ©rer les statistiques
 $stmt = $pdo->query("SELECT COUNT(*) FROM " . DB_PREFIX . "games");
 $total_games = $stmt->fetchColumn();
 
@@ -152,66 +152,67 @@ $total_game_sets = $stmt->fetchColumn();
     <div class="admin-container">
         <div class="admin-header">
             <div>
-                <h1>🎮 Administration - Gang de Monstres</h1>
+                <h1>ðŸŽ® Administration - Gang de Monstres</h1>
                 <p style="margin: 5px 0 0 0; color: #666;">Tableau de bord</p>
             </div>
             <div>
-                <a href="../public/" class="public-link">🌐 Voir le site</a>
-                <a href="logout.php" class="logout-btn">Déconnexion</a>
+                <a\ href="account\.php"\ class="public-link"\ style="background:\#17a2b8">⚙️\ Mon\ compte</a>\r\n\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ <a\ href="\.\./public/"\ class="public-link">ðŸŒ Voir le site</a>
+                <a href="logout.php" class="logout-btn">DÃ©connexion</a>
             </div>
         </div>
 
         <div class="admin-nav">
-            <a href="index.php" class="active">📊 Dashboard</a>
-            <a href="types.php">🎯 Types d'objectifs</a>
-            <a href="games.php">🎮 Jeux & Extensions</a>
-            <a href="difficulty.php">⚙️ Difficultés</a>
-            <a href="stats.php">📈 Statistiques</a>
+            <a href="index.php" class="active">ðŸ“Š Dashboard</a>
+            <a href="types.php">ðŸŽ¯ Types d'objectifs</a>
+            <a href="games.php">ðŸŽ® Jeux & Extensions</a>
+            <a href="difficulty.php">âš™ï¸ DifficultÃ©s</a>
+            <a href="stats.php">ðŸ“ˆ Statistiques</a>
         </div>
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="icon">🎯</div>
+                <div class="icon">ðŸŽ¯</div>
                 <div class="number"><?php echo $total_games; ?></div>
-                <div class="label">Parties créées</div>
+                <div class="label">Parties crÃ©Ã©es</div>
             </div>
 
             <div class="stat-card">
-                <div class="icon">🔥</div>
+                <div class="icon">ðŸ”¥</div>
                 <div class="number"><?php echo $active_games; ?></div>
                 <div class="label">Parties actives</div>
             </div>
 
             <div class="stat-card">
-                <div class="icon">👥</div>
+                <div class="icon">ðŸ‘¥</div>
                 <div class="number"><?php echo $total_players; ?></div>
-                <div class="label">Joueurs connectés</div>
+                <div class="label">Joueurs connectÃ©s</div>
             </div>
 
             <div class="stat-card">
-                <div class="icon">🎲</div>
+                <div class="icon">ðŸŽ²</div>
                 <div class="number"><?php echo $total_types; ?></div>
                 <div class="label">Types d'objectifs</div>
             </div>
 
             <div class="stat-card">
-                <div class="icon">🎮</div>
+                <div class="icon">ðŸŽ®</div>
                 <div class="number"><?php echo $total_game_sets; ?></div>
-                <div class="label">Jeux configurés</div>
+                <div class="label">Jeux configurÃ©s</div>
             </div>
         </div>
 
         <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h2>🚀 Actions rapides</h2>
-            <p>Bienvenue dans le backoffice de Gang de Monstres! Utilisez le menu ci-dessus pour gérer votre application.</p>
+            <h2>ðŸš€ Actions rapides</h2>
+            <p>Bienvenue dans le backoffice de Gang de Monstres! Utilisez le menu ci-dessus pour gÃ©rer votre application.</p>
 
             <ul style="margin-top: 20px; line-height: 2;">
-                <li><strong>Types d'objectifs:</strong> Gérer les types de monstres et leurs icônes</li>
+                <li><strong>Types d'objectifs:</strong> GÃ©rer les types de monstres et leurs icÃ´nes</li>
                 <li><strong>Jeux & Extensions:</strong> Configurer les jeux de base et les extensions</li>
-                <li><strong>Difficultés:</strong> Paramétrer les niveaux de difficulté</li>
+                <li><strong>DifficultÃ©s:</strong> ParamÃ©trer les niveaux de difficultÃ©</li>
                 <li><strong>Statistiques:</strong> Voir les performances et les scores</li>
             </ul>
         </div>
     </div>
 </body>
 </html>
+
