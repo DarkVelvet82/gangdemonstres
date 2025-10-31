@@ -156,8 +156,9 @@ $total_game_sets = $stmt->fetchColumn();
                 <p style="margin: 5px 0 0 0; color: #666;">Tableau de bord</p>
             </div>
             <div>
-                <a\ href="account\.php"\ class="public-link"\ style="background:\#17a2b8">⚙️\ Mon\ compte</a>\r\n\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ <a\ href="\.\./public/"\ class="public-link">ðŸŒ Voir le site</a>
-                <a href="logout.php" class="logout-btn">DÃ©connexion</a>
+                <a href="account.php" class="public-link" style="background:#17a2b8">Mon compte</a>
+                <a href="../public/" class="public-link">Voir le site</a>
+                <a href="logout.php" class="logout-btn">Deconnexion</a>
             </div>
         </div>
 
