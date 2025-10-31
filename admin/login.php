@@ -4,6 +4,9 @@ session_start();
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 
+// Force UTF-8 output to avoid mojibake
+header('Content-Type: text/html; charset=UTF-8');
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

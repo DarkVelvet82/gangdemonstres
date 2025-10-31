@@ -4,6 +4,9 @@ session_start();
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 
+// Force UTF-8 output
+header('Content-Type: text/html; charset=UTF-8');
+
 if (!isset($_SESSION['admin_logged_in']) || !$_SESSION['admin_logged_in']) {
     header('Location: login.php');
     exit;
@@ -165,4 +168,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
     </div>
 </body>
 </html>
-
