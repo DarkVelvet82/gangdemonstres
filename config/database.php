@@ -30,10 +30,15 @@ if ($is_local) {
 
 } else {
     // ========= ENVIRONNEMENT PRODUCTION (HOSTINGER) =========
-    define('DB_HOST', '127.0.0.1');
-    define('DB_NAME', 'u282641111_gangdemonstres');
-    define('DB_USER', 'u282641111_theogang');
-    define('DB_PASS', 'L8Wh3cBKmQ9q');
+    // Lire d'abord depuis un fichier de secrets non versionné, sinon variables d'environnement
+    $secrets_file = __DIR__ . '/secrets.php';
+    if (file_exists($secrets_file)) {
+        require_once $secrets_file; // peut définir DB_HOST/DB_NAME/DB_USER/DB_PASS
+    }
+    if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
+    if (!defined('DB_NAME')) define('DB_NAME', getenv('DB_NAME') ?: '');
+    if (!defined('DB_USER')) define('DB_USER', getenv('DB_USER') ?: '');
+    if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS') ?: '');
 
     if (!defined('APP_URL')) define('APP_URL', 'https://gangdemonstres.com/');
     if (!defined('DEBUG_MODE')) define('DEBUG_MODE', false);

@@ -18,44 +18,65 @@ jobs:
 
       - name: Prepare deploy package (dist/)
         shell: bash
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
         run: |
           set -e
           mkdir -p dist
 
-          # Root .htaccess for clean URLs on Hostinger
+          # Root .htaccess for clean URLs + security
           cat > dist/.htaccess <<'HTACC'
           AddDefaultCharset UTF-8
+          Options -Indexes
+          <IfModule mod_headers.c>
+            Header always set X-Frame-Options "SAMEORIGIN"
+            Header set X-Content-Type-Options "nosniff"
+            Header set Referrer-Policy "no-referrer-when-downgrade"
+          </IfModule>
+
           RewriteEngine On
           RewriteBase /
 
-          # Home route first (avoid 403 on existing dir root)
+          # Home route first
           RewriteRule ^$ gang-de-monstres-standalone/public/ [L]
 
-          # Setup installer access (one-off)
-          RewriteRule ^setup/install$ gang-de-monstres-standalone/install.php?run=install [L]
-          RewriteRule ^setup/?$ gang-de-monstres-standalone/install.php [L]
-
-          # Map assets and API to the app folder
+          # Map assets, API, admin to app
           RewriteRule ^assets/(.*)$ gang-de-monstres-standalone/assets/$1 [L]
           RewriteRule ^api/(.*)$ gang-de-monstres-standalone/api/$1 [L,QSA]
-          # Admin backoffice
           RewriteRule ^admin/(.*)$ gang-de-monstres-standalone/admin/$1 [L]
 
-          # Serve existing files/dirs immediately (except we already handled root)
+          # Serve existing files/dirs
           RewriteCond %{REQUEST_URI} !^/gang-de-monstres-standalone/
           RewriteCond %{REQUEST_FILENAME} -f [OR]
           RewriteCond %{REQUEST_FILENAME} -d
           RewriteRule ^ - [L]
 
-          # Fallback: everything else from app public
+          # Fallback to app public
           RewriteRule ^(.*)$ gang-de-monstres-standalone/public/$1 [L,QSA]
           HTACC
 
           # Copy the repository into a subfolder as deployed structure
           rsync -a --delete --exclude '.git' ./ dist/gang-de-monstres-standalone/
 
-          # Ensure protection for sensitive dirs (idempotent)
-          mkdir -p dist/gang-de-monstres-standalone/config dist/gang-de-monstres-standalone/includes
+          # Write production DB secrets from GitHub secrets (optional)
+          mkdir -p dist/gang-de-monstres-standalone/config
+          if [ -n "${DB_HOST}" ] && [ -n "${DB_NAME}" ] && [ -n "${DB_USER}" ] && [ -n "${DB_PASS}" ]; then
+            cat > dist/gang-de-monstres-standalone/config/secrets.php <<SECRETS
+            <?php
+            if (!defined('DB_HOST')) define('DB_HOST', '${DB_HOST}');
+            if (!defined('DB_NAME')) define('DB_NAME', '${DB_NAME}');
+            if (!defined('DB_USER')) define('DB_USER', '${DB_USER}');
+            if (!defined('DB_PASS')) define('DB_PASS', '${DB_PASS}');
+            ?>
+SECRETS
+          else
+            echo "[deploy] DB secrets not set; skipping secrets.php";
+          fi
+
+          # Protections dossiers sensibles
           echo 'Require all denied' > dist/gang-de-monstres-standalone/config/.htaccess
           echo 'Require all denied' > dist/gang-de-monstres-standalone/includes/.htaccess
 
@@ -69,8 +90,10 @@ jobs:
           port: 21
           local-dir: dist/
           server-dir: ./
+          dangerous-clean-slate: true
           exclude: |
             **/.git*
             **/.github/**
             **/node_modules/**
             **/.DS_Store
+
