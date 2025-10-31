@@ -31,6 +31,10 @@ jobs:
           # Home route first (avoid 403 on existing dir root)
           RewriteRule ^$ gang-de-monstres-standalone/public/ [L]
 
+          # Setup installer access (one-off)
+          RewriteRule ^setup/install$ gang-de-monstres-standalone/install.php?run=install [L]
+          RewriteRule ^setup/?$ gang-de-monstres-standalone/install.php [L]
+
           # Map assets and API to the app folder
           RewriteRule ^assets/(.*)$ gang-de-monstres-standalone/assets/$1 [L]
           RewriteRule ^api/(.*)$ gang-de-monstres-standalone/api/$1 [L,QSA]

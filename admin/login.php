@@ -14,19 +14,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = get_post_value('password', '');
 
     if (!empty($username) && !empty($password)) {
-        $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "users WHERE username = ? AND is_admin = 1");
-        $stmt->execute([$username]);
-        $user = $stmt->fetch();
+        try {
+            // Vérifier que la table existe, sinon afficher un message clair au lieu d'une 500
+            $pdo->query("SELECT 1 FROM " . DB_PREFIX . "users LIMIT 1");
 
-        if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['admin_logged_in'] = true;
-            $_SESSION['admin_user_id'] = $user['id'];
-            $_SESSION['admin_username'] = $user['username'];
+            $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "users WHERE username = ? AND is_admin = 1");
+            $stmt->execute([$username]);
+            $user = $stmt->fetch();
 
-            header('Location: index.php');
-            exit;
-        } else {
-            $error = 'Identifiants incorrects';
+            if ($user && password_verify($password, $user['password'])) {
+                $_SESSION['admin_logged_in'] = true;
+                $_SESSION['admin_user_id'] = $user['id'];
+                $_SESSION['admin_username'] = $user['username'];
+
+                header('Location: index.php');
+                exit;
+            } else {
+                $error = 'Identifiants incorrects';
+            }
+        } catch (PDOException $ex) {
+            // Probablement tables non installées en production
+            $error = "Base non initialisée sur le serveur. Exécutez l'installation: /setup/install puis réessayez.";
         }
     } else {
         $error = 'Veuillez remplir tous les champs';
