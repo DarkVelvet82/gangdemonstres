@@ -33,6 +33,8 @@ jobs:
           # Map assets and API to the app folder
           RewriteRule ^assets/(.*)$ gang-de-monstres-standalone/assets/$1 [L]
           RewriteRule ^api/(.*)$ gang-de-monstres-standalone/api/$1 [L,QSA]
+          # Admin backoffice
+          RewriteRule ^admin/(.*)$ gang-de-monstres-standalone/admin/$1 [L]
 
           # Serve existing files/dirs immediately (except we already handled root)
           RewriteCond %{REQUEST_URI} !^/gang-de-monstres-standalone/
