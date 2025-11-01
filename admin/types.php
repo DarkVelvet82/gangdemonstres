@@ -1,14 +1,15 @@
 <?php
 session_start();
-
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
-header('Content-Type: text/html; charset=UTF-8');
 
 if (!isset($_SESSION['admin_logged_in']) || !$_SESSION['admin_logged_in']) {
     header('Location: login.php');
     exit;
 }
+
+$page_title = "Types d'Objectifs";
+$page_description = "Gestion des types de monstres";
 
 // Actions
 $message = '';
@@ -119,31 +120,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Récupérer tous les types
 $stmt = $pdo->query("SELECT * FROM " . DB_PREFIX . "types ORDER BY display_order ASC");
 $types = $stmt->fetchAll();
-?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Types d'objectifs - Administration</title>
-    <link rel="stylesheet" href="../assets/css/objectif.css">
-    <style>
-        body { background: #f7f8fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif; }
-        .admin-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .admin-header { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; display:flex; justify-content: space-between; align-items:center; }
-        .admin-nav { display:flex; gap:15px; margin-bottom:30px; background:white; padding:15px; border-radius:12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .admin-nav a { padding:10px 20px; background:#667eea; color:#fff; text-decoration:none; border-radius:8px; font-weight:600; transition: all .3s; }
-        .admin-nav a:hover { background:#5568d3; transform: translateY(-2px); }
-        .admin-nav a.active { background:#764ba2; }
-        .card { background:white; padding:25px; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,.1); margin-bottom:25px; }
-        .card h2 { margin-top:0; color:#333; }
+
+$extra_styles = '<style>
         .form-table { width:100%; }
         .form-table th { text-align:left; padding:15px 10px 15px 0; width:180px; font-weight:600; }
         .form-table td { padding:15px 0; }
         .regular-text { width:100%; max-width:400px; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px; }
         .small-text { width:80px; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:24px; text-align:center; }
-        .submit-button { background:#667eea; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:15px; transition: all .3s; }
-        .submit-button:hover { background:#5568d3; transform: translateY(-2px); }
+        .submit-button { background:#1a1a1a; color:#fff; padding:12px 30px; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:15px; transition: all .3s; }
+        .submit-button:hover { background:#2a2a2a; }
         .data-table { width:100%; border-collapse:collapse; margin-top:15px; }
         .data-table thead { background:#f8f9fa; }
         .data-table th { text-align:left; padding:12px; font-weight:600; border-bottom:2px solid #dee2e6; }
@@ -158,131 +143,164 @@ $types = $stmt->fetchAll();
         .image-preview img { max-width:100px; max-height:100px; margin-top:10px; border-radius:6px; }
         .upload-btn { background:#28a745; color:#fff; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:600; }
         .upload-btn:hover { background:#218838; }
-        .logout-btn { padding:10px 20px; background:#dc3545; color:#fff; border:none; border-radius:8px; text-decoration:none; font-weight:600; }
-        .back-btn { padding:10px 20px; background:#6c757d; color:#fff; border-radius:8px; text-decoration:none; font-weight:600; margin-right:10px; }
-    </style>
-</head>
-<body>
-    <div class="admin-container">
-        <div class="admin-header">
-            <div>
-                <h1>Types d'Objectifs</h1>
-                <p style="margin:5px 0 0; color:#666;">Gestion des types de monstres</p>
-            </div>
-            <div>
-                <a href="index.php" class="back-btn">← Dashboard</a>
-                <a href="logout.php" class="logout-btn">Déconnexion</a>
-            </div>
-        </div>
 
-        <div class="admin-nav">
-            <a href="index.php">Dashboard</a>
-            <a href="types.php" class="active">Types d'objectifs</a>
-            <a href="games.php">Jeux & Extensions</a>
-            <a href="difficulty.php">Difficultés</a>
-            <a href="stats.php">Statistiques</a>
-        </div>
-
-        <?php if ($message): ?>
-            <div class="message <?php echo $message_type; ?>">
-                <?php echo htmlspecialchars($message); ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- Formulaire d'ajout -->
-        <div class="card">
-            <h2>Ajouter un nouveau type</h2>
-            <form method="post" enctype="multipart/form-data">
-                <input type="hidden" name="action" value="add_type">
-                <table class="form-table">
-                    <tr>
-                        <th>Nom du type</th>
-                        <td>
-                            <input type="text" name="type_name" required class="regular-text" placeholder="Ex: Zombie, Sorcière...">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Image</th>
-                        <td>
-                            <input type="file" name="type_image" required accept="image/*" class="regular-text">
-                            <small style="display:block; margin-top:5px; color:#666;">Formats acceptés: JPG, PNG, GIF, WEBP, SVG (obligatoire)</small>
-                            <div id="image-preview" style="margin-top:10px; display:none;">
-                                <img id="preview-img" src="" style="max-width:150px; max-height:150px; border-radius:8px; border:2px solid #ddd;">
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                <button type="submit" class="submit-button">Ajouter le type</button>
-            </form>
-        </div>
-
-        <!-- Liste des types existants -->
-        <div class="card">
-            <h2>Types existants</h2>
-            <?php if (empty($types)): ?>
-                <p style="color:#666;">Aucun type configuré.</p>
-            <?php else: ?>
-                <form method="post">
-                    <input type="hidden" name="action" value="update_order">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Ordre</th>
-                                <th>Nom</th>
-                                <th>Image</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($types as $type): ?>
-                            <tr>
-                                <td>
-                                    <input type="number" name="type_orders[<?php echo $type['id']; ?>]"
-                                           value="<?php echo $type['display_order']; ?>"
-                                           class="number-input" min="1">
-                                </td>
-                                <td><strong><?php echo htmlspecialchars($type['name']); ?></strong></td>
-                                <td>
-                                    <?php if (!empty($type['image_url'])): ?>
-                                        <img src="<?php echo htmlspecialchars($type['image_url']); ?>"
-                                             style="width:50px; height:50px; object-fit:contain;">
-                                    <?php else: ?>
-                                        <em style="color:#999;">Aucune image</em>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <form method="post" style="display:inline;"
-                                          onsubmit="return confirm('Supprimer ce type ?');">
-                                        <input type="hidden" name="action" value="delete_type">
-                                        <input type="hidden" name="type_id" value="<?php echo $type['id']; ?>">
-                                        <button type="submit" class="btn-delete">Supprimer</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                    <button type="submit" class="submit-button" style="margin-top:20px;">Mettre à jour l'ordre</button>
-                </form>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <script>
-    // Prévisualisation de l'image avant upload
-    document.querySelector('input[name="type_image"]').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const preview = document.getElementById('image-preview');
-                const previewImg = document.getElementById('preview-img');
-                previewImg.src = event.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+        /* Style personnalisé pour input file */
+        .file-input-wrapper { position: relative; }
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
         }
-    });
-    </script>
-</body>
-</html>
+        .file-input-label {
+            display: block;
+            width: 100%;
+            padding: 10px 15px;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-input-label:hover {
+            background: #2a2a2a;
+        }
+        .file-input-label .icon {
+            margin-right: 8px;
+        }
+        .file-name-display {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>';
+
+require_once __DIR__ . '/includes/admin-layout.php';
+?>
+
+<?php if ($message): ?>
+    <div class="message <?php echo $message_type; ?>">
+        <?php echo htmlspecialchars($message); ?>
+    </div>
+<?php endif; ?>
+
+<!-- Formulaire d'ajout -->
+<div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px;">
+    <h2 style="margin: 0 0 20px 0; font-size: 20px; color: #333;">Ajouter un nouveau type</h2>
+    <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="add_type">
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 30px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Nom du type</label>
+                    <input type="text" name="type_name" required class="regular-text" placeholder="Ex: Zombie, Sorcière..." style="width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Image</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" name="type_image" id="type_image" required accept="image/*">
+                        <div class="file-input-label">
+                            <span class="icon">📁</span>
+                            <span id="file-label-text">Choisir une image</span>
+                        </div>
+                    </div>
+                    <div id="file-name-display" class="file-name-display"></div>
+                    <small style="display:block; margin-top:5px; color:#666;">Formats acceptés: JPG, PNG, GIF, WEBP, SVG</small>
+                </div>
+            </div>
+            <div id="image-preview" style="display:none; text-align:center;">
+                <img id="preview-img" src="" style="max-width:150px; max-height:150px; border-radius:8px; border:2px solid #ddd;">
+            </div>
+        </div>
+        <button type="submit" class="submit-button">Ajouter le type</button>
+    </form>
+</div>
+
+<!-- Liste des types existants -->
+<div class="card" style="margin-top: 40px;">
+    <h2>Types existants</h2>
+    <?php if (empty($types)): ?>
+        <p style="color:#666;">Aucun type configuré.</p>
+    <?php else: ?>
+        <form method="post">
+            <input type="hidden" name="action" value="update_order">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ordre</th>
+                        <th>Nom</th>
+                        <th>Image</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($types as $type): ?>
+                    <tr>
+                        <td>
+                            <input type="number" name="type_orders[<?php echo $type['id']; ?>]"
+                                   value="<?php echo $type['display_order']; ?>"
+                                   class="number-input" min="1">
+                        </td>
+                        <td><strong><?php echo htmlspecialchars($type['name']); ?></strong></td>
+                        <td>
+                            <?php if (!empty($type['image_url'])): ?>
+                                <img src="<?php echo htmlspecialchars($type['image_url']); ?>"
+                                     style="width:50px; height:50px; object-fit:contain;">
+                            <?php else: ?>
+                                <em style="color:#999;">Aucune image</em>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <form method="post" style="display:inline;"
+                                  onsubmit="return confirm('Supprimer ce type ?');">
+                                <input type="hidden" name="action" value="delete_type">
+                                <input type="hidden" name="type_id" value="<?php echo $type['id']; ?>">
+                                <button type="submit" class="btn-delete">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <button type="submit" class="submit-button" style="margin-top:20px;">Mettre à jour l'ordre</button>
+        </form>
+    <?php endif; ?>
+</div>
+
+<script>
+// Prévisualisation de l'image avant upload et affichage du nom de fichier
+document.querySelector('input[name="type_image"]').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const fileLabelText = document.getElementById('file-label-text');
+
+    if (file) {
+        // Afficher le nom du fichier
+        fileNameDisplay.textContent = '✓ ' + file.name;
+        fileNameDisplay.style.color = '#28a745';
+        fileLabelText.textContent = 'Fichier sélectionné';
+
+        // Prévisualisation de l'image
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const preview = document.getElementById('image-preview');
+            const previewImg = document.getElementById('preview-img');
+            previewImg.src = event.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        fileNameDisplay.textContent = '';
+        fileLabelText.textContent = 'Choisir une image';
+    }
+});
+</script>
+
+<?php require_once __DIR__ . '/includes/admin-layout-end.php'; ?>
