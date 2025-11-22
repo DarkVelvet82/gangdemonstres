@@ -7,15 +7,111 @@ window.ObjectifScores = (function($) {
 
     function displayCreatorManagementButtons(gameId) {
         console.log('🎮 Affichage des boutons de gestion créateur');
-        
+
         // Supprimer les anciens éléments
         $('#creator-management, #end-game-modal, #post-game-modal, #scores-modal').remove();
+        // Supprimer aussi les éléments du drawer mobile
+        $('.management-sticky-button, .management-drawer, .management-drawer-overlay').remove();
 
         // Afficher les boutons selon l'état de la partie
         $('#objectif-state').append(generateManagementHTML());
-        
+
+        // Ajouter le drawer mobile
+        addMobileDrawer();
+
         // Ajouter les modales
         addAllModals();
+    }
+
+    // Générer le HTML du drawer mobile
+    function addMobileDrawer() {
+        // Ajouter la classe use-drawer au bloc de gestion pour le masquer sur mobile
+        $('#creator-management').addClass('use-drawer');
+
+        // Ajouter le bouton sticky
+        const stickyButtonHtml = `
+            <button class="management-sticky-button visible" id="open-management-drawer">
+                Gestion de la partie
+            </button>
+        `;
+        $('body').append(stickyButtonHtml);
+
+        // Ajouter l'overlay
+        $('body').append('<div class="management-drawer-overlay"></div>');
+
+        // Ajouter le drawer
+        const drawerHtml = `
+            <div class="management-drawer">
+                <div class="drawer-handle"></div>
+                <div class="drawer-header">
+                    <h4>${gameEnded ? '🎯 Partie terminée' : '🎮 Gestion de la partie'}</h4>
+                    <button class="drawer-close-btn" id="close-management-drawer">✕</button>
+                </div>
+                <div class="drawer-content">
+                    ${generateDrawerContentHTML()}
+                </div>
+            </div>
+        `;
+        $('body').append(drawerHtml);
+    }
+
+    // Générer le contenu du drawer selon l'état de la partie
+    function generateDrawerContentHTML() {
+        if (gameEnded) {
+            return `
+                <p>La partie est terminée. Que souhaitez-vous faire ?</p>
+                <div class="management-buttons">
+                    <button id="drawer-new-game-button" class="objectif-button objectif-primary">
+                        🔄 Nouvelle partie
+                    </button>
+                    <button id="drawer-quit-session-button" class="objectif-button objectif-secondary">
+                        🚪 Quitter la session
+                    </button>
+                </div>
+                <div class="secondary-buttons">
+                    <button id="drawer-view-scores-button" class="objectif-button objectif-secondary">
+                        🏆 Voir les scores
+                    </button>
+                </div>
+            `;
+        } else {
+            return `
+                <p>En tant que créateur, vous pouvez gérer cette partie :</p>
+                <div class="management-buttons">
+                    <button id="drawer-end-game-button" class="objectif-button objectif-primary">
+                        🏆 Terminer la partie
+                    </button>
+                </div>
+                <div class="secondary-buttons">
+                    <button id="drawer-check-status-button" class="objectif-button objectif-secondary">
+                        📊 Vérifier le statut
+                    </button>
+                    <button id="drawer-view-scores-button" class="objectif-button objectif-secondary">
+                        🏆 Voir les scores
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Ouvrir le drawer
+    function openDrawer() {
+        $('.management-drawer-overlay').addClass('active');
+        $('.management-drawer').addClass('open');
+        $('body').css('overflow', 'hidden'); // Empêcher le scroll du body
+    }
+
+    // Fermer le drawer
+    function closeDrawer() {
+        $('.management-drawer-overlay').removeClass('active');
+        $('.management-drawer').removeClass('open');
+        $('body').css('overflow', ''); // Réactiver le scroll
+    }
+
+    // Mettre à jour le drawer après fin de partie
+    function updateDrawerContent() {
+        $('.management-drawer .drawer-header h4').text(gameEnded ? '🎯 Partie terminée' : '🎮 Gestion de la partie');
+        $('.management-drawer .drawer-content').html(generateDrawerContentHTML());
     }
 
     function generateManagementHTML() {
@@ -183,13 +279,69 @@ window.ObjectifScores = (function($) {
         updateManagementButtonsAfterGameEnd();
     });
 
+    // ==========================================
+    // Event handlers pour le drawer mobile
+    // ==========================================
+
+    // Ouvrir le drawer
+    $(document).on('click', '#open-management-drawer', function() {
+        openDrawer();
+    });
+
+    // Fermer le drawer (bouton X)
+    $(document).on('click', '#close-management-drawer', function() {
+        closeDrawer();
+    });
+
+    // Fermer le drawer en cliquant sur l'overlay
+    $(document).on('click', '.management-drawer-overlay', function() {
+        closeDrawer();
+    });
+
+    // Boutons du drawer - Terminer la partie
+    $(document).on('click', '#drawer-end-game-button', function() {
+        closeDrawer();
+        $('#end-game-modal').fadeIn(300);
+        loadPlayersForEndGame();
+    });
+
+    // Boutons du drawer - Vérifier le statut
+    $(document).on('click', '#drawer-check-status-button', function() {
+        closeDrawer();
+        checkGameStatus();
+    });
+
+    // Boutons du drawer - Voir les scores
+    $(document).on('click', '#drawer-view-scores-button', function() {
+        closeDrawer();
+        $('#scores-modal').fadeIn(300);
+        loadScores();
+    });
+
+    // Boutons du drawer - Nouvelle partie
+    $(document).on('click', '#drawer-new-game-button', function() {
+        closeDrawer();
+        restartGame();
+    });
+
+    // Boutons du drawer - Quitter la session
+    $(document).on('click', '#drawer-quit-session-button', function() {
+        closeDrawer();
+        quitSession();
+    });
+
+    // ==========================================
+
     // Charger les VRAIS joueurs de la partie
     function loadPlayersForEndGame() {
         const gameId = localStorage.getItem('objectif_game_id');
-        
+
         $('#players-list-loading').show();
         $('#players-list').hide();
-        
+
+        const ajaxStartTime = performance.now();
+        console.log('⏱️ [PERF] Début chargement joueurs...');
+
         // Appel AJAX pour récupérer les vrais joueurs
         $.ajax({
             method: 'POST',
@@ -200,6 +352,9 @@ window.ObjectifScores = (function($) {
                 game_id: gameId
             },
             success: function(response) {
+                const ajaxDuration = Math.round(performance.now() - ajaxStartTime);
+                console.log(`⏱️ [PERF] Joueurs chargés en ${ajaxDuration}ms`);
+
                 if (response.success) {
                     displayPlayersForSelection(response.data.players);
                 } else {
@@ -207,6 +362,8 @@ window.ObjectifScores = (function($) {
                 }
             },
             error: function() {
+                const ajaxDuration = Math.round(performance.now() - ajaxStartTime);
+                console.error(`⏱️ [PERF] Échec chargement joueurs après ${ajaxDuration}ms`);
                 displayDefaultPlayers();
             }
         });
@@ -318,14 +475,21 @@ window.ObjectifScores = (function($) {
         // Mettre à jour l'affichage des boutons pour refléter l'état "partie terminée"
         const gameId = localStorage.getItem('objectif_game_id');
         $('#creator-management').replaceWith(generateManagementHTML());
+        // Ajouter la classe use-drawer pour le masquer sur mobile
+        $('#creator-management').addClass('use-drawer');
+        // Mettre à jour aussi le drawer mobile
+        updateDrawerContent();
     }
 
     function loadScores() {
         const playerFilter = $('#player-filter').val();
-        
+
         $('#scores-loading').show();
         $('#scores-content').hide();
-        
+
+        const ajaxStartTime = performance.now();
+        console.log('⏱️ [PERF] Début chargement scores...');
+
         $.ajax({
             method: 'POST',
             url: objectif_ajax.ajax_url,
@@ -336,9 +500,12 @@ window.ObjectifScores = (function($) {
                 limit: 50
             },
             success: function(response) {
+                const ajaxDuration = Math.round(performance.now() - ajaxStartTime);
+                console.log(`⏱️ [PERF] Scores chargés en ${ajaxDuration}ms`);
+
                 $('#scores-loading').hide();
                 $('#scores-content').show();
-                
+
                 if (response.success) {
                     displayScores(response.data.scores, response.data.recent_games);
                 } else {
@@ -346,6 +513,8 @@ window.ObjectifScores = (function($) {
                 }
             },
             error: function() {
+                const ajaxDuration = Math.round(performance.now() - ajaxStartTime);
+                console.error(`⏱️ [PERF] Échec scores après ${ajaxDuration}ms`);
                 $('#scores-loading').hide();
                 $('#scores-content').show().html('<p>❌ Erreur de connexion</p>');
             }
@@ -402,7 +571,10 @@ window.ObjectifScores = (function($) {
 
     function restartGame() {
         const gameId = localStorage.getItem('objectif_game_id');
-        
+
+        const ajaxStartTime = performance.now();
+        console.log('⏱️ [PERF] Début restart game...');
+
         $.ajax({
             method: 'POST',
             url: objectif_ajax.ajax_url,
@@ -412,10 +584,17 @@ window.ObjectifScores = (function($) {
                 game_id: gameId
             },
             success: function(response) {
+                const ajaxDuration = Math.round(performance.now() - ajaxStartTime);
+                console.log(`⏱️ [PERF] Restart terminé en ${ajaxDuration}ms`);
+
                 if (response.success) {
                     // Réinitialiser l'état de la partie
                     gameEnded = false;
-                    
+
+                    // Incrémenter le compteur de parties jouées (pour messages d'encouragement)
+                    const gamesPlayed = parseInt(localStorage.getItem('objectif_games_played') || '0');
+                    localStorage.setItem('objectif_games_played', gamesPlayed + 1);
+
                     $('#objectif-state').html(`
                         <div class="objectif-restart-success">
                             <h3>🔄 Nouvelle partie lancée !</h3>
@@ -430,6 +609,8 @@ window.ObjectifScores = (function($) {
                 }
             },
             error: function() {
+                const ajaxDuration = Math.round(performance.now() - ajaxStartTime);
+                console.error(`⏱️ [PERF] Échec restart après ${ajaxDuration}ms`);
                 alert('Erreur lors du redémarrage de la partie.');
             }
         });

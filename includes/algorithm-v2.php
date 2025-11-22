@@ -6,6 +6,7 @@
 
 /**
  * Analyse la distribution réelle des types dans les cartes du jeu
+ * OPTIMISÉ : Une seule requête SQL avec JOIN au lieu d'une requête par carte
  *
  * @param int|null $game_set_id ID du jeu/extension, ou NULL pour tous les jeux
  * @return array Distribution des types avec stats détaillées
@@ -13,91 +14,86 @@
 function analyze_type_distribution($game_set_id = null) {
     global $pdo;
 
-    // Récupérer toutes les cartes monstres visibles du jeu
+    // OPTIMISATION : Une seule requête avec JOIN pour récupérer cartes + types
     if ($game_set_id === null || $game_set_id === 0) {
         // Tous les jeux
         $stmt = $pdo->prepare("
-            SELECT c.id, c.name, c.quantity
+            SELECT c.id as card_id, c.name as card_name, c.quantity as card_quantity,
+                   ct.type_id, ct.quantity as symbols_per_card
             FROM " . DB_PREFIX . "cards c
+            LEFT JOIN " . DB_PREFIX . "card_types ct ON c.id = ct.card_id
             WHERE c.card_type = 'monster'
             AND c.is_visible = 1
+            AND ct.type_id IS NOT NULL
         ");
         $stmt->execute();
     } else {
         // Jeu spécifique
         $stmt = $pdo->prepare("
-            SELECT c.id, c.name, c.quantity
+            SELECT c.id as card_id, c.name as card_name, c.quantity as card_quantity,
+                   ct.type_id, ct.quantity as symbols_per_card
             FROM " . DB_PREFIX . "cards c
+            LEFT JOIN " . DB_PREFIX . "card_types ct ON c.id = ct.card_id
             WHERE c.game_set_id = ?
             AND c.card_type = 'monster'
             AND c.is_visible = 1
+            AND ct.type_id IS NOT NULL
         ");
         $stmt->execute([$game_set_id]);
     }
-    $cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if (empty($cards)) {
+    if (empty($rows)) {
         return [];
     }
 
     $distribution = [];
-    $total_cards = 0;
+    $card_quantities = []; // Pour calculer total_cards sans doublons
 
-    foreach ($cards as $card) {
-        $card_quantity = (int)$card['quantity']; // Nombre d'exemplaires de cette carte
-        $total_cards += $card_quantity;
+    foreach ($rows as $row) {
+        $card_id = $row['card_id'];
+        $card_name = $row['card_name'];
+        $card_quantity = (int)$row['card_quantity'];
+        $type_id = $row['type_id'];
+        $symbols_per_card = (int)$row['symbols_per_card'];
 
-        // Récupérer les types de cette carte
-        $stmt = $pdo->prepare("
-            SELECT type_id, quantity
-            FROM " . DB_PREFIX . "card_types
-            WHERE card_id = ?
-        ");
-        $stmt->execute([$card['id']]);
-        $card_types = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Tracker les cartes uniques pour le total
+        $card_quantities[$card_id] = $card_quantity;
 
-        foreach ($card_types as $ct) {
-            $type_id = $ct['type_id'];
-            $symbols_per_card = (int)$ct['quantity']; // Symboles sur une seule carte
-
-            // Ignorer les entrées sans type_id (ne devrait pas arriver si Pierre vide existe)
-            if ($type_id === null) {
-                continue;
-            }
-
-            if (!isset($distribution[$type_id])) {
-                $distribution[$type_id] = [
-                    'total_symbols' => 0,    // Nombre total de symboles dans tout le deck
-                    'card_count' => 0,        // Nombre total de cartes ayant ce type (incluant exemplaires)
-                    'max_on_card' => 0,       // Quantité max sur une seule carte
-                    'cards_list' => []        // Liste des cartes pour debug
-                ];
-            }
-
-            // Multiplier par le nombre d'exemplaires
-            $distribution[$type_id]['total_symbols'] += $symbols_per_card * $card_quantity;
-            $distribution[$type_id]['card_count'] += $card_quantity;
-            $distribution[$type_id]['max_on_card'] = max(
-                $distribution[$type_id]['max_on_card'],
-                $symbols_per_card
-            );
-            $distribution[$type_id]['cards_list'][] = [
-                'card_id' => $card['id'],
-                'card_name' => $card['name'],
-                'symbols_per_card' => $symbols_per_card,
-                'card_quantity' => $card_quantity,
-                'total_symbols' => $symbols_per_card * $card_quantity
+        if (!isset($distribution[$type_id])) {
+            $distribution[$type_id] = [
+                'total_symbols' => 0,
+                'card_count' => 0,
+                'max_on_card' => 0,
+                'cards_list' => []
             ];
         }
+
+        // Multiplier par le nombre d'exemplaires
+        $distribution[$type_id]['total_symbols'] += $symbols_per_card * $card_quantity;
+        $distribution[$type_id]['card_count'] += $card_quantity;
+        $distribution[$type_id]['max_on_card'] = max(
+            $distribution[$type_id]['max_on_card'],
+            $symbols_per_card
+        );
+        $distribution[$type_id]['cards_list'][] = [
+            'card_id' => $card_id,
+            'card_name' => $card_name,
+            'symbols_per_card' => $symbols_per_card,
+            'card_quantity' => $card_quantity,
+            'total_symbols' => $symbols_per_card * $card_quantity
+        ];
     }
 
-    // Ajouter des métadonnées globales
-    foreach ($distribution as $type_id => &$data) {
-        // Fréquence relative (% de cartes ayant ce type)
-        $data['frequency'] = $data['card_count'] / $total_cards;
+    // Calculer le total de cartes
+    $total_cards = array_sum($card_quantities);
 
-        // Densité moyenne (moyenne de symboles par carte ayant ce type)
-        $data['avg_density'] = $data['total_symbols'] / $data['card_count'];
+    // Ajouter des métadonnées globales
+    if ($total_cards > 0) {
+        foreach ($distribution as $type_id => &$data) {
+            $data['frequency'] = $data['card_count'] / $total_cards;
+            $data['avg_density'] = $data['total_symbols'] / $data['card_count'];
+        }
     }
 
     return $distribution;
@@ -252,13 +248,20 @@ function recommend_difficulty_config($game_set_id = null) {
  * Calcule les limites maximales par type selon le nombre de joueurs
  * Retourne pour chaque type_id la quantité maximale réaliste
  *
+ * OPTIMISATION: Accepte $distribution en paramètre optionnel pour éviter
+ * les appels redondants à analyze_type_distribution()
+ *
  * @param PDO $pdo Instance PDO
  * @param int $game_set_id ID du jeu
  * @param int $player_count Nombre de joueurs
+ * @param array|null $distribution Distribution pré-calculée (optionnel)
  * @return array [type_id => max_quantity]
  */
-function get_type_limits_by_player_count($pdo, $game_set_id, $player_count) {
-    $distribution = analyze_type_distribution($game_set_id);
+function get_type_limits_by_player_count($pdo, $game_set_id, $player_count, $distribution = null) {
+    // Utiliser la distribution fournie ou la calculer
+    if ($distribution === null) {
+        $distribution = analyze_type_distribution($game_set_id);
+    }
 
     if (empty($distribution)) {
         return [];
@@ -481,22 +484,35 @@ function calculate_difficulty_score($objective, $distribution, $rarity_scores) {
 /**
  * Sélectionne le nombre de types pour un objectif selon les poids de génération configurés
  *
+ * OPTIMISATION: Accepte $cached_weights en paramètre optionnel pour éviter
+ * les appels SQL redondants dans les boucles
+ *
  * @param PDO $pdo Instance PDO
  * @param int $game_set_id ID du jeu
  * @param string $difficulty Difficulté (easy/normal/hard)
  * @param int $max_types Nombre maximum de types disponibles
+ * @param array|null $cached_weights Poids pré-chargés [types_count => weight] (optionnel)
  * @return int Nombre de types sélectionné (1-5)
  */
-function select_types_count_weighted($pdo, $game_set_id, $difficulty, $max_types) {
-    // Récupérer les poids de génération depuis la configuration
-    $stmt = $pdo->prepare("
-        SELECT types_count, generation_weight
-        FROM " . DB_PREFIX . "difficulty_config
-        WHERE game_set_id = ? AND difficulty = ? AND generation_weight > 0
-        ORDER BY types_count ASC
-    ");
-    $stmt->execute([$game_set_id, $difficulty]);
-    $weights = $stmt->fetchAll(PDO::FETCH_ASSOC);
+function select_types_count_weighted($pdo, $game_set_id, $difficulty, $max_types, $cached_weights = null) {
+    // Utiliser les poids fournis ou les récupérer de la base
+    if ($cached_weights !== null) {
+        // Convertir en format attendu
+        $weights = [];
+        foreach ($cached_weights as $types_count => $weight) {
+            $weights[] = ['types_count' => $types_count, 'generation_weight' => $weight];
+        }
+    } else {
+        // Récupérer les poids de génération depuis la configuration
+        $stmt = $pdo->prepare("
+            SELECT types_count, generation_weight
+            FROM " . DB_PREFIX . "difficulty_config
+            WHERE game_set_id = ? AND difficulty = ? AND generation_weight > 0
+            ORDER BY types_count ASC
+        ");
+        $stmt->execute([$game_set_id, $difficulty]);
+        $weights = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     // Si aucun poids configuré, utiliser les valeurs par défaut
     if (empty($weights)) {

@@ -12,6 +12,21 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 
 // Déterminer la page active pour le highlight
 $current_page = basename($_SERVER['PHP_SELF']);
+
+// Récupérer les paramètres du site (logo, nom)
+function get_site_setting($pdo, $key, $default = '') {
+    try {
+        $stmt = $pdo->prepare("SELECT setting_value FROM " . DB_PREFIX . "settings WHERE setting_key = ?");
+        $stmt->execute([$key]);
+        $result = $stmt->fetchColumn();
+        return $result !== false ? $result : $default;
+    } catch (Exception $e) {
+        return $default;
+    }
+}
+
+$_site_logo = get_site_setting($pdo, 'site_logo', '');
+$_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -47,6 +62,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             padding: 25px 20px;
             background: rgba(0,0,0,0.2);
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
         }
 
         .sidebar-header h1 {
@@ -58,6 +74,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .sidebar-header p {
             font-size: 12px;
             opacity: 0.7;
+        }
+
+        .sidebar-header .site-logo {
+            max-width: 180px;
+            max-height: 60px;
+            object-fit: contain;
         }
 
         .sidebar-nav {
@@ -315,8 +337,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- Menu latéral -->
     <aside class="admin-sidebar">
         <div class="sidebar-header">
-            <h1>Gang de Monstres</h1>
-            <p>Administration</p>
+            <?php if ($_site_logo && file_exists(__DIR__ . '/../' . $_site_logo)): ?>
+                <img src="<?php echo htmlspecialchars($_site_logo); ?>" alt="<?php echo htmlspecialchars($_site_name); ?>" class="site-logo">
+            <?php else: ?>
+                <h1><?php echo htmlspecialchars($_site_name); ?></h1>
+                <p>Administration</p>
+            <?php endif; ?>
         </div>
 
         <nav class="sidebar-nav">
@@ -346,6 +372,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </a>
             <a href="test-player-multiplier.php" class="nav-item <?php echo $current_page === 'test-player-multiplier.php' ? 'active' : ''; ?>">
                 <span class="icon">🧪</span> Test Multiplicateur
+            </a>
+            <a href="settings.php" class="nav-item <?php echo $current_page === 'settings.php' ? 'active' : ''; ?>">
+                <span class="icon">⚙️</span> Paramètres
             </a>
         </nav>
 

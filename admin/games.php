@@ -15,6 +15,48 @@ $page_description = "Configuration des jeux de base et extensions";
 $message = '';
 $message_type = '';
 
+// Fonction pour gérer l'upload d'image
+function handleGameImageUpload($file, $existing_image = null) {
+    $upload_dir = __DIR__ . '/../uploads/games/';
+
+    // Créer le dossier si nécessaire
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+
+    // Si pas de nouveau fichier, garder l'existant
+    if (!isset($file) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+        return $existing_image;
+    }
+
+    // Vérifier les erreurs
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return $existing_image;
+    }
+
+    // Vérifier le type
+    $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!in_array($file['type'], $allowed_types)) {
+        return $existing_image;
+    }
+
+    // Générer un nom unique
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = 'game_' . uniqid() . '.' . $extension;
+    $filepath = $upload_dir . $filename;
+
+    // Déplacer le fichier
+    if (move_uploaded_file($file['tmp_name'], $filepath)) {
+        // Supprimer l'ancienne image si elle existe
+        if ($existing_image && file_exists(__DIR__ . '/../' . $existing_image)) {
+            unlink(__DIR__ . '/../' . $existing_image);
+        }
+        return 'uploads/games/' . $filename;
+    }
+
+    return $existing_image;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
 
@@ -23,14 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = trim($_POST['game_name']);
             $description = trim($_POST['game_description'] ?? '');
             $is_base = isset($_POST['is_base_game']) ? 1 : 0;
+            $bonus_players = (int)($_POST['bonus_players'] ?? ($is_base ? 4 : 2));
+            $image_url = handleGameImageUpload($_FILES['game_image'] ?? null);
 
             try {
                 // Obtenir le prochain display_order
                 $stmt = $pdo->query("SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM " . DB_PREFIX . "game_sets");
                 $next_order = $stmt->fetchColumn();
 
-                $stmt = $pdo->prepare("INSERT INTO " . DB_PREFIX . "game_sets (name, description, is_base_game, display_order) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$name, $description, $is_base, $next_order]);
+                $stmt = $pdo->prepare("INSERT INTO " . DB_PREFIX . "game_sets (name, description, image_url, is_base_game, bonus_players, display_order) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $description, $image_url, $is_base, $bonus_players, $next_order]);
 
                 $game_set_id = $pdo->lastInsertId();
 
@@ -56,11 +100,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = trim($_POST['game_name']);
             $description = trim($_POST['game_description'] ?? '');
             $is_base = isset($_POST['is_base_game']) ? 1 : 0;
+            $bonus_players = (int)($_POST['bonus_players'] ?? ($is_base ? 4 : 2));
+
+            // Récupérer l'image actuelle
+            $stmt = $pdo->prepare("SELECT image_url FROM " . DB_PREFIX . "game_sets WHERE id = ?");
+            $stmt->execute([$game_set_id]);
+            $current_image = $stmt->fetchColumn();
+
+            $image_url = handleGameImageUpload($_FILES['game_image'] ?? null, $current_image);
 
             try {
                 // Mettre à jour le jeu
-                $stmt = $pdo->prepare("UPDATE " . DB_PREFIX . "game_sets SET name = ?, description = ?, is_base_game = ? WHERE id = ?");
-                $stmt->execute([$name, $description, $is_base, $game_set_id]);
+                $stmt = $pdo->prepare("UPDATE " . DB_PREFIX . "game_sets SET name = ?, description = ?, image_url = ?, is_base_game = ?, bonus_players = ? WHERE id = ?");
+                $stmt->execute([$name, $description, $image_url, $is_base, $bonus_players, $game_set_id]);
 
                 // Supprimer les anciennes associations
                 $stmt = $pdo->prepare("DELETE FROM " . DB_PREFIX . "set_types WHERE game_set_id = ?");
@@ -182,13 +234,20 @@ require_once __DIR__ . '/includes/admin-layout.php';
 <!-- Formulaire d'ajout -->
 <div class="card">
     <h2>Ajouter un nouveau jeu ou extension</h2>
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="action" value="add_game_set">
         <table class="form-table">
             <tr>
                 <th>Nom</th>
                 <td>
                     <input type="text" name="game_name" required class="regular-text" placeholder="Ex: Jeu de Base, Extension Zombies...">
+                </td>
+            </tr>
+            <tr>
+                <th>Image</th>
+                <td>
+                    <input type="file" name="game_image" accept="image/*" class="regular-text">
+                    <p style="margin:5px 0 0; color:#666; font-size:13px;">Image de la boîte du jeu (PNG, JPG, WebP)</p>
                 </td>
             </tr>
             <tr>
@@ -201,9 +260,18 @@ require_once __DIR__ . '/includes/admin-layout.php';
                 <th>Type</th>
                 <td>
                     <label style="display:flex; align-items:center;">
-                        <input type="checkbox" name="is_base_game" value="1" style="margin-right:8px;">
+                        <input type="checkbox" name="is_base_game" value="1" style="margin-right:8px;" id="add_is_base_game" onchange="updateBonusPlayersLabel()">
                         <span>Jeu de base (cochez si c'est le jeu principal, pas une extension)</span>
                     </label>
+                </td>
+            </tr>
+            <tr>
+                <th><span id="bonus_players_label">Bonus joueurs</span></th>
+                <td>
+                    <input type="number" name="bonus_players" id="add_bonus_players" min="0" max="8" value="2" class="regular-text" style="max-width:100px;">
+                    <p style="margin:5px 0 0; color:#666; font-size:13px;" id="bonus_players_help">
+                        Pour un jeu de base : nombre max de joueurs (ex: 4). Pour une extension : bonus ajouté (ex: +2).
+                    </p>
                 </td>
             </tr>
             <tr>
@@ -242,9 +310,10 @@ require_once __DIR__ . '/includes/admin-layout.php';
         <table class="data-table">
             <thead>
                 <tr>
+                    <th>Image</th>
                     <th>Nom</th>
                     <th>Type</th>
-                    <th>Description</th>
+                    <th>Joueurs</th>
                     <th>Types inclus</th>
                     <th>Actions</th>
                 </tr>
@@ -263,7 +332,19 @@ require_once __DIR__ . '/includes/admin-layout.php';
                     $included_types = $stmt->fetchAll();
                 ?>
                 <tr>
-                    <td><strong><?php echo htmlspecialchars($game_set['name']); ?></strong></td>
+                    <td style="width:80px;">
+                        <?php if (!empty($game_set['image_url'])): ?>
+                            <img src="../<?php echo htmlspecialchars($game_set['image_url']); ?>" style="width:60px; height:60px; object-fit:contain; border-radius:6px;">
+                        <?php else: ?>
+                            <span style="color:#999; font-size:12px;">Pas d'image</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <strong><?php echo htmlspecialchars($game_set['name']); ?></strong>
+                        <?php if ($game_set['description']): ?>
+                            <br><small style="color:#666;"><?php echo htmlspecialchars($game_set['description']); ?></small>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <?php if ($game_set['is_base_game']): ?>
                             <span class="badge base-game">JEU DE BASE</span>
@@ -271,7 +352,13 @@ require_once __DIR__ . '/includes/admin-layout.php';
                             <span class="badge extension">EXTENSION</span>
                         <?php endif; ?>
                     </td>
-                    <td><?php echo htmlspecialchars($game_set['description']); ?></td>
+                    <td>
+                        <?php if ($game_set['is_base_game']): ?>
+                            <strong><?php echo (int)($game_set['bonus_players'] ?? 4); ?></strong> max
+                        <?php else: ?>
+                            <strong>+<?php echo (int)($game_set['bonus_players'] ?? 2); ?></strong>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <?php foreach ($included_types as $type): ?>
                             <span style="display:inline-block; margin-right:10px; margin-bottom:5px;">
@@ -305,7 +392,7 @@ require_once __DIR__ . '/includes/admin-layout.php';
             <span class="modal-close" onclick="closeEditModal()">&times;</span>
         </div>
         <div class="modal-body">
-            <form method="post" id="editForm">
+            <form method="post" id="editForm" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="edit_game_set">
                 <input type="hidden" name="game_set_id" id="edit_game_set_id">
 
@@ -314,6 +401,19 @@ require_once __DIR__ . '/includes/admin-layout.php';
                         <th>Nom</th>
                         <td>
                             <input type="text" name="game_name" id="edit_game_name" required class="regular-text" placeholder="Ex: Jeu de Base, Extension Zombies...">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Image actuelle</th>
+                        <td>
+                            <div id="edit_current_image"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Nouvelle image</th>
+                        <td>
+                            <input type="file" name="game_image" accept="image/*" class="regular-text">
+                            <p style="margin:5px 0 0; color:#666; font-size:13px;">Laisser vide pour conserver l'image actuelle</p>
                         </td>
                     </tr>
                     <tr>
@@ -326,9 +426,18 @@ require_once __DIR__ . '/includes/admin-layout.php';
                         <th>Type</th>
                         <td>
                             <label style="display:flex; align-items:center;">
-                                <input type="checkbox" name="is_base_game" id="edit_is_base_game" value="1" style="margin-right:8px;">
+                                <input type="checkbox" name="is_base_game" id="edit_is_base_game" value="1" style="margin-right:8px;" onchange="updateEditBonusPlayersLabel()">
                                 <span>Jeu de base (cochez si c'est le jeu principal, pas une extension)</span>
                             </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><span id="edit_bonus_players_label">Bonus joueurs</span></th>
+                        <td>
+                            <input type="number" name="bonus_players" id="edit_bonus_players" min="0" max="8" value="2" class="regular-text" style="max-width:100px;">
+                            <p style="margin:5px 0 0; color:#666; font-size:13px;" id="edit_bonus_players_help">
+                                Pour un jeu de base : nombre max de joueurs (ex: 4). Pour une extension : bonus ajouté (ex: +2).
+                            </p>
                         </td>
                     </tr>
                     <tr>
@@ -362,6 +471,15 @@ function openEditModal(gameSet, selectedTypes) {
     document.getElementById('edit_game_name').value = gameSet.name;
     document.getElementById('edit_game_description').value = gameSet.description || '';
     document.getElementById('edit_is_base_game').checked = gameSet.is_base_game == 1;
+    document.getElementById('edit_bonus_players').value = gameSet.bonus_players || (gameSet.is_base_game == 1 ? 4 : 2);
+
+    // Afficher l'image actuelle
+    const imageContainer = document.getElementById('edit_current_image');
+    if (gameSet.image_url) {
+        imageContainer.innerHTML = '<img src="../' + gameSet.image_url + '" style="width:80px; height:80px; object-fit:contain; border-radius:6px; border:1px solid #ddd;">';
+    } else {
+        imageContainer.innerHTML = '<span style="color:#999;">Aucune image</span>';
+    }
 
     // Décocher tous les types
     document.querySelectorAll('#edit_types_selection input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -372,11 +490,41 @@ function openEditModal(gameSet, selectedTypes) {
         if (checkbox) checkbox.checked = true;
     });
 
+    // Mettre à jour le label
+    updateEditBonusPlayersLabel();
+
     document.getElementById('editModal').style.display = 'block';
 }
 
 function closeEditModal() {
     document.getElementById('editModal').style.display = 'none';
+}
+
+// Mettre à jour le label bonus_players pour le formulaire d'ajout
+function updateBonusPlayersLabel() {
+    const isBase = document.getElementById('add_is_base_game').checked;
+    const label = document.getElementById('bonus_players_label');
+    const input = document.getElementById('add_bonus_players');
+
+    if (isBase) {
+        label.textContent = 'Joueurs max';
+        input.value = 4;
+    } else {
+        label.textContent = 'Bonus joueurs';
+        input.value = 2;
+    }
+}
+
+// Mettre à jour le label bonus_players pour le formulaire d'édition
+function updateEditBonusPlayersLabel() {
+    const isBase = document.getElementById('edit_is_base_game').checked;
+    const label = document.getElementById('edit_bonus_players_label');
+
+    if (isBase) {
+        label.textContent = 'Joueurs max';
+    } else {
+        label.textContent = 'Bonus joueurs';
+    }
 }
 
 // Fermer le modal en cliquant en dehors

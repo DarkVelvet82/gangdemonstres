@@ -96,6 +96,9 @@ $extra_styles = '<style>
     .difficulty-explanation, .difficulty-notes { background:#f0f6fc; padding:15px; border-radius:8px; margin:15px 0; border-left:4px solid #667eea; }
     .difficulty-notes ul { margin-left:20px; line-height:1.8; }
     select { padding:10px; border:1px solid #ddd; border-radius:6px; font-size:14px; min-width:250px; }
+    /* Styles pour la sélection des jeux de test */
+    #test-game-selection label:hover { border-color:#0284c7; background:#f0f9ff; }
+    #test-game-selection label:has(input:checked) { border-color:#0284c7; background:#e0f2fe; }
 </style>';
 
 require_once __DIR__ . '/includes/admin-layout.php';
@@ -326,9 +329,35 @@ require_once __DIR__ . '/includes/admin-layout.php';
                 <button type="submit" class="submit-button">Sauvegarder la configuration</button>
             </form>
 
-            <button type="button" onclick="testObjectiveGeneration()" class="submit-button btn-success" style="margin-top:20px;">
-                🧪 Tester la génération d'objectifs
-            </button>
+            <!-- Section de test avec sélection multiple de jeux -->
+            <div style="background:#f0f9ff; padding:20px; border-radius:8px; border:2px solid #0284c7; margin-top:20px;">
+                <h3 style="margin-top:0; color:#0284c7;">🧪 Tester la génération d'objectifs</h3>
+                <p style="color:#666; margin-bottom:15px;">Sélectionnez les jeux/extensions à combiner pour le test :</p>
+
+                <div id="test-game-selection" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+                    <?php foreach ($game_sets as $game_set): ?>
+                        <label style="display:flex; align-items:center; gap:8px; padding:10px 15px; background:white; border:2px solid #ddd; border-radius:8px; cursor:pointer; transition:all 0.2s;">
+                            <input type="checkbox" name="test_games[]" value="<?php echo $game_set['id']; ?>"
+                                   <?php echo $game_set['id'] == $selected_game_set ? 'checked' : ''; ?>
+                                   class="test-game-checkbox"
+                                   data-is-base="<?php echo $game_set['is_base_game'] ? '1' : '0'; ?>">
+                            <?php if (!empty($game_set['image_url'])): ?>
+                                <img src="../<?php echo htmlspecialchars($game_set['image_url']); ?>" style="width:30px; height:30px; object-fit:contain; border-radius:4px;">
+                            <?php endif; ?>
+                            <span style="font-weight:600;"><?php echo htmlspecialchars($game_set['name']); ?></span>
+                            <?php if ($game_set['is_base_game']): ?>
+                                <span style="background:#28a745; color:white; padding:2px 6px; border-radius:4px; font-size:10px;">BASE</span>
+                            <?php else: ?>
+                                <span style="background:#667eea; color:white; padding:2px 6px; border-radius:4px; font-size:10px;">EXT</span>
+                            <?php endif; ?>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+
+                <button type="button" onclick="testObjectiveGeneration()" class="submit-button btn-success" id="test-btn">
+                    🧪 Lancer le test
+                </button>
+            </div>
 
             <div id="test-results" style="margin-top:30px; display:none;"></div>
         </div>
@@ -454,9 +483,19 @@ require_once __DIR__ . '/includes/admin-layout.php';
         }
 
         function testObjectiveGeneration() {
-            const gameSetId = <?php echo $selected_game_set; ?>;
+            // Récupérer tous les jeux sélectionnés
+            const selectedGameIds = [];
+            document.querySelectorAll('.test-game-checkbox:checked').forEach(cb => {
+                selectedGameIds.push(parseInt(cb.value));
+            });
+
+            if (selectedGameIds.length === 0) {
+                alert('❌ Veuillez sélectionner au moins un jeu/extension');
+                return;
+            }
+
             const difficulty = '<?php echo htmlspecialchars($difficulty); ?>';
-            const testButton = event.target;
+            const testButton = document.getElementById('test-btn');
 
             testButton.disabled = true;
             testButton.textContent = '🔄 Génération en cours...';
@@ -468,7 +507,7 @@ require_once __DIR__ . '/includes/admin-layout.php';
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    game_set_id: gameSetId,
+                    game_set_ids: selectedGameIds,
                     difficulty: difficulty,
                     player_counts: [2, 3, 4]
                 })
@@ -486,7 +525,7 @@ require_once __DIR__ . '/includes/admin-layout.php';
             })
             .finally(() => {
                 testButton.disabled = false;
-                testButton.textContent = '🧪 Tester la génération d\'objectifs';
+                testButton.textContent = '🧪 Lancer le test';
             });
         }
 

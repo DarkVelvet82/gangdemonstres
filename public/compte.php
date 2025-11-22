@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/front-header.php';
 require_once __DIR__ . '/../includes/functions.php';
 ?>
 <!DOCTYPE html>
@@ -7,10 +7,13 @@ require_once __DIR__ . '/../includes/functions.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon compte - Gang de Monstres</title>
+    <title>Mon compte - <?php echo htmlspecialchars($site_name); ?></title>
     <link rel="stylesheet" href="../assets/css/objectif.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        .container {
+            max-width: 500px;
+        }
         .auth-container {
             max-width: 450px;
             margin: 0 auto;
@@ -33,7 +36,7 @@ require_once __DIR__ . '/../includes/functions.php';
             background: transparent;
         }
         .auth-tab.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #003f53 0%, #003547 100%);
             color: white;
         }
         .auth-panel {
@@ -65,7 +68,7 @@ require_once __DIR__ . '/../includes/functions.php';
             transition: border-color 0.3s;
         }
         .form-group input:focus {
-            border-color: #667eea;
+            border-color: #003f53;
             outline: none;
         }
         .code-input {
@@ -78,7 +81,7 @@ require_once __DIR__ . '/../includes/functions.php';
         .btn-primary {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #003f53 0%, #003547 100%);
             color: white;
             border: none;
             border-radius: 8px;
@@ -89,7 +92,7 @@ require_once __DIR__ . '/../includes/functions.php';
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 20px rgba(0, 63, 83, 0.4);
         }
         .btn-primary:disabled {
             opacity: 0.6;
@@ -141,7 +144,7 @@ require_once __DIR__ . '/../includes/functions.php';
             margin-top: 15px;
         }
         .forgot-link a {
-            color: #667eea;
+            color: #003f53;
             text-decoration: none;
             font-size: 14px;
         }
@@ -152,7 +155,7 @@ require_once __DIR__ . '/../includes/functions.php';
             display: none;
         }
         .user-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #003f53 0%, #003547 100%);
             color: white;
             padding: 25px;
             border-radius: 12px;
@@ -254,7 +257,9 @@ require_once __DIR__ . '/../includes/functions.php';
 <body>
     <div class="container">
         <div class="header">
-            <a href="index.php" class="back-link">← Retour</a>
+            <a href="index.php" class="back-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M244 400L100 256l144-144M120 256h292"/></svg>
+            </a>
             <h1>Mon compte</h1>
         </div>
 

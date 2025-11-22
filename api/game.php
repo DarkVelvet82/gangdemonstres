@@ -99,14 +99,17 @@ function create_game() {
         'extensions' => $extensions
     ];
 
-    // Récupérer les noms des jeux
+    // OPTIMISATION: Récupérer les noms des jeux en une seule requête
+    $placeholders = implode(',', array_fill(0, count($game_set_ids), '?'));
+    $stmt = $pdo->prepare("SELECT id, name FROM " . DB_PREFIX . "game_sets WHERE id IN ($placeholders)");
+    $stmt->execute($game_set_ids);
+    $games_rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    // Réordonner selon l'ordre original (base_game en premier)
     $game_names = [];
     foreach ($game_set_ids as $game_set_id) {
-        $stmt = $pdo->prepare("SELECT name FROM " . DB_PREFIX . "game_sets WHERE id = ?");
-        $stmt->execute([$game_set_id]);
-        $name = $stmt->fetchColumn();
-        if ($name) {
-            $game_names[] = $name;
+        if (isset($games_rows[$game_set_id])) {
+            $game_names[] = $games_rows[$game_set_id];
         }
     }
     $game_config_name = implode(' + ', $game_names);

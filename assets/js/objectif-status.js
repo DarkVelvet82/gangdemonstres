@@ -29,7 +29,9 @@ window.ObjectifStatus = (function($) {
 
     function checkCreatorGameStatus(gameId) {
         console.log('🔍 Vérification statut créateur pour game_id:', gameId);
-        
+
+        const ajaxStartTime = performance.now();
+
         $.ajax({
             method: 'POST',
             url: objectif_ajax.ajax_url,
@@ -40,9 +42,16 @@ window.ObjectifStatus = (function($) {
             },
             timeout: 10000,
             success: function(response) {
+                const ajaxDuration = Math.round(performance.now() - ajaxStartTime);
+                // Log uniquement si > 500ms
+                if (ajaxDuration > 500) {
+                    console.warn(`⏱️ [PERF] Status check LENT: ${ajaxDuration}ms`);
+                }
                 updateStatusDisplay(response, gameId);
             },
             error: function(xhr, status, error) {
+                const ajaxDuration = Math.round(performance.now() - ajaxStartTime);
+                console.error(`⏱️ [PERF] Status check ÉCHEC après ${ajaxDuration}ms`);
                 handleStatusError(xhr);
             }
         });
@@ -99,12 +108,20 @@ window.ObjectifStatus = (function($) {
     function startCreatorStatusAutoRefresh() {
         const gameId = localStorage.getItem('objectif_game_id');
         if (gameId && $('#creator-game-status').length > 0) {
+            // IMPORTANT: Arrêter l'ancien interval avant d'en créer un nouveau
+            if (ObjectifGame.creatorStatusInterval) {
+                console.log('🔄 Arrêt de l\'ancien interval status avant redémarrage');
+                clearInterval(ObjectifGame.creatorStatusInterval);
+                ObjectifGame.creatorStatusInterval = null;
+            }
+
             ObjectifGame.creatorStatusInterval = setInterval(() => {
                 if ($('#creator-objective-section:visible').length === 0) {
                     console.log('🔄 Auto-refresh statut créateur');
                     checkCreatorGameStatus(gameId);
                 } else {
                     clearInterval(ObjectifGame.creatorStatusInterval);
+                    ObjectifGame.creatorStatusInterval = null;
                     console.log('✅ Auto-refresh arrêté - tous connectés');
                 }
             }, 10000);

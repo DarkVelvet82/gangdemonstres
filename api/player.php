@@ -45,6 +45,10 @@ try {
 function generate_objective() {
     global $pdo;
 
+    $start_time = microtime(true);
+    $log_steps = [];
+    $log_steps['start'] = 0;
+
     $nonce = get_post_value('nonce');
     if (!verify_nonce($nonce)) {
         send_json_response(false, [], 'Nonce invalide');
@@ -74,7 +78,16 @@ function generate_objective() {
     }
 
     $difficulty = $game['difficulty'];
-    $game_set_id = $game['game_set_id'];
+    $game_set_id = $game['game_set_id']; // Jeu de base (pour la config de difficulté)
+
+    // Récupérer tous les game_set_ids (base + extensions)
+    $game_set_ids = [$game_set_id];
+    if ($game['game_config']) {
+        $config = json_decode($game['game_config'], true);
+        if ($config && isset($config['extensions']) && is_array($config['extensions'])) {
+            $game_set_ids = array_merge($game_set_ids, $config['extensions']);
+        }
+    }
 
     // Récupérer les types disponibles
     if ($game['game_config']) {
@@ -134,19 +147,46 @@ function generate_objective() {
         return;
     }
 
-    // Analyser la distribution pour identifier les types rares
-    $distribution = analyze_type_distribution($game_set_id);
+    $log_steps['before_distribution'] = round((microtime(true) - $start_time) * 1000, 2);
 
-    // Déterminer le nombre de types en utilisant les poids de génération
-    $types_count = select_types_count_weighted($pdo, $game_set_id, $difficulty, count($available_types));
+    // Analyser la distribution pour identifier les types rares
+    // Combiner les distributions de tous les jeux sélectionnés (base + extensions)
+    // OPTIMISATION: Stocker les distributions individuelles pour réutilisation
+    $distributions_by_game = [];
+    $distribution = [];
+    foreach ($game_set_ids as $gsid) {
+        $gs_distribution = analyze_type_distribution($gsid);
+        $distributions_by_game[$gsid] = $gs_distribution; // Stocker pour réutilisation
+        foreach ($gs_distribution as $type_id => $data) {
+            if (!isset($distribution[$type_id])) {
+                $distribution[$type_id] = $data;
+            } else {
+                // Combiner les données
+                $distribution[$type_id]['total_symbols'] += $data['total_symbols'];
+                $distribution[$type_id]['card_count'] += $data['card_count'];
+                $distribution[$type_id]['max_on_card'] = max($distribution[$type_id]['max_on_card'], $data['max_on_card']);
+                $distribution[$type_id]['cards_list'] = array_merge($distribution[$type_id]['cards_list'], $data['cards_list']);
+            }
+        }
+    }
+    $log_steps['after_distribution'] = round((microtime(true) - $start_time) * 1000, 2);
 
     // Séparer types abondants et rares selon la distribution RÉELLE
+    // IMPORTANT: Exclure les types qui n'ont AUCUN symbole dans les cartes
     $abundant_types = [];
     $rare_types = [];
+    $all_valid_types = []; // Types avec au moins 1 symbole
 
     foreach ($available_types as $type) {
+        // Si le type n'existe pas dans la distribution = 0 cartes = on l'ignore complètement
+        if (!isset($distribution[$type['id']])) {
+            continue; // Type avec 0 symboles, on l'exclut
+        }
+
+        $all_valid_types[] = $type; // Ce type a des symboles, il est valide
+
         // Un type est considéré rare s'il a < 15 symboles total
-        $is_rare = isset($distribution[$type['id']]) && $distribution[$type['id']]['total_symbols'] < 15;
+        $is_rare = $distribution[$type['id']]['total_symbols'] < 15;
 
         if ($is_rare) {
             $rare_types[] = $type;
@@ -154,6 +194,38 @@ function generate_objective() {
             $abundant_types[] = $type;
         }
     }
+
+    // Vérifier qu'il reste des types valides après filtrage
+    if (empty($all_valid_types)) {
+        send_json_response(false, [], "Aucun type avec des symboles sur les cartes de ce jeu");
+    }
+
+    // OPTIMISATION: Pré-charger toutes les configurations de difficulté en une seule requête
+    $stmt = $pdo->prepare("SELECT types_count, min_quantity, max_quantity, generation_weight
+        FROM " . DB_PREFIX . "difficulty_config
+        WHERE game_set_id = ? AND difficulty = ?");
+    $stmt->execute([$game_set_id, $difficulty]);
+    $difficulty_configs_raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Indexer par types_count pour accès rapide O(1)
+    $difficulty_configs = [];
+    $generation_weights = [];
+    foreach ($difficulty_configs_raw as $config) {
+        $tc = $config['types_count'];
+        $difficulty_configs[$tc] = [
+            'min_quantity' => $config['min_quantity'],
+            'max_quantity' => $config['max_quantity']
+        ];
+        if ($config['generation_weight'] > 0) {
+            $generation_weights[$tc] = $config['generation_weight'];
+        }
+    }
+
+    $log_steps['after_difficulty_config'] = round((microtime(true) - $start_time) * 1000, 2);
+
+    // Déterminer le nombre de types en utilisant les poids de génération PRE-CHARGES
+    $types_count = select_types_count_weighted($pdo, $game_set_id, $difficulty, count($all_valid_types), $generation_weights);
+    $log_steps['after_types_count'] = round((microtime(true) - $start_time) * 1000, 2);
 
     // Pour 1 type SEULEMENT : utiliser uniquement les types abondants (pas de Zombies/Sorcière x1)
     // Pour 2 types : utiliser aussi seulement les types abondants
@@ -166,23 +238,18 @@ function generate_objective() {
         }
         $available_for_selection = $abundant_types;
     } else {
-        // Pour 3+ types, on peut mélanger types abondants ET rares
-        $available_for_selection = $available_types;
+        // Pour 3+ types, on peut mélanger types abondants ET rares (mais jamais les types à 0 symboles)
+        $available_for_selection = $all_valid_types;
     }
 
-    // Récupérer la configuration de difficulté
-    $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "difficulty_config
-        WHERE game_set_id = ? AND difficulty = ? AND types_count = ?");
-    $stmt->execute([$game_set_id, $difficulty, $types_count]);
-    $difficulty_config = $stmt->fetch();
-
-    if (!$difficulty_config) {
+    // OPTIMISATION: Utiliser la config pré-chargée
+    if (!isset($difficulty_configs[$types_count])) {
         // Valeurs par défaut
         $min_quantity = 3;
         $max_quantity = 8;
     } else {
-        $min_quantity = $difficulty_config['min_quantity'];
-        $max_quantity = $difficulty_config['max_quantity'];
+        $min_quantity = $difficulty_configs[$types_count]['min_quantity'];
+        $max_quantity = $difficulty_configs[$types_count]['max_quantity'];
     }
 
     // Sélectionner aléatoirement les types
@@ -235,9 +302,26 @@ function generate_objective() {
         }
     }
 
+    $log_steps['before_type_limits'] = round((microtime(true) - $start_time) * 1000, 2);
+
     // Obtenir les limites réalistes par type selon le nombre de joueurs
+    // Combiner les limites de tous les jeux sélectionnés (base + extensions)
+    // OPTIMISATION: Réutiliser les distributions déjà calculées
     $player_count = (int)$game['player_count'];
-    $type_limits = get_type_limits_by_player_count($pdo, $game_set_id, $player_count);
+    $type_limits = [];
+    foreach ($game_set_ids as $gsid) {
+        // Passer la distribution déjà calculée pour éviter un nouvel appel SQL
+        $gs_distribution = $distributions_by_game[$gsid] ?? null;
+        $gs_limits = get_type_limits_by_player_count($pdo, $gsid, $player_count, $gs_distribution);
+        foreach ($gs_limits as $type_id => $limit) {
+            if (!isset($type_limits[$type_id])) {
+                $type_limits[$type_id] = $limit;
+            } else {
+                $type_limits[$type_id] += $limit; // Cumuler les limites
+            }
+        }
+    }
+    $log_steps['after_type_limits'] = round((microtime(true) - $start_time) * 1000, 2);
 
     // Récupérer les objectifs déjà générés pour les autres joueurs de cette partie
     $stmt = $pdo->prepare("SELECT objective_json FROM " . DB_PREFIX . "players
@@ -256,6 +340,8 @@ function generate_objective() {
     // Ex: 3 types avec min=4, max=8 → chaque type aura entre 4-8 symboles
     $min_per_type = $min_quantity;  // Utiliser min_quantity de la config comme min per type
     $max_per_type = $max_quantity;  // Utiliser max_quantity de la config comme max per type
+
+    $log_steps['before_generation_loop'] = round((microtime(true) - $start_time) * 1000, 2);
 
     $max_attempts = 50; // Limite de tentatives pour éviter une boucle infinie
     $attempt = 0;
@@ -288,6 +374,9 @@ function generate_objective() {
         }
     }
 
+    $log_steps['after_generation_loop'] = round((microtime(true) - $start_time) * 1000, 2);
+    $log_steps['generation_attempts'] = $attempt;
+
     if (!$is_unique) {
         send_json_response(false, [], "Impossible de générer un objectif unique après {$max_attempts} tentatives");
     }
@@ -300,11 +389,15 @@ function generate_objective() {
         WHERE id = ?");
     $stmt->execute([$objectif_json, $player_id]);
 
+    $log_steps['after_save'] = round((microtime(true) - $start_time) * 1000, 2);
+    $log_steps['total_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+
     send_json_response(true, [
         'objective' => $objectif,
         'player_name' => $player['player_name'],
         'pictos' => $pictos_v2,
-        'already_generated' => false
+        'already_generated' => false,
+        'debug_timing' => $log_steps
     ]);
 }
 
@@ -333,16 +426,86 @@ function check_objective() {
         send_json_response(false, [], 'Joueur introuvable');
     }
 
+    // Récupérer le statut de la partie et le nom du créateur
+    $stmt = $pdo->prepare("
+        SELECT g.status as game_status,
+               creator.player_name as creator_name
+        FROM " . DB_PREFIX . "games g
+        LEFT JOIN " . DB_PREFIX . "players creator ON g.id = creator.game_id AND creator.is_creator = 1
+        WHERE g.id = ?
+    ");
+    $stmt->execute([$player['game_id']]);
+    $game_info = $stmt->fetch();
+
+    $game_status = $game_info ? $game_info['game_status'] : 'active';
+    $creator_name = $game_info ? $game_info['creator_name'] : '';
+
+    // Si pas d'objectif, renvoyer success avec objective vide (pour le chargement initial)
     if (empty($player['objective_json'])) {
-        send_json_response(false, [], "Aucun objectif généré pour ce joueur");
+        send_json_response(true, [
+            'objective' => null,
+            'player_name' => $player['player_name'],
+            'pictos' => [],
+            'has_objective' => false,
+            'game_status' => $game_status,
+            'creator_name' => $creator_name
+        ]);
+        return;
     }
 
     $objective = json_decode($player['objective_json'], true);
 
+    // Récupérer la partie pour obtenir les pictos
+    $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "games WHERE id = ?");
+    $stmt->execute([$player['game_id']]);
+    $game = $stmt->fetch();
+
+    $pictos_v2 = [];
+
+    if ($game) {
+        $game_set_id = $game['game_set_id'];
+
+        // Récupérer les types disponibles
+        if ($game['game_config']) {
+            $available_types = resolve_available_types($pdo, $game['game_config']);
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT t.*, st.is_limited, st.max_quantity
+                FROM " . DB_PREFIX . "types t
+                JOIN " . DB_PREFIX . "set_types st ON t.id = st.type_id
+                WHERE st.game_set_id = ?
+                ORDER BY t.display_order
+            ");
+            $stmt->execute([$game_set_id]);
+            $available_types = $stmt->fetchAll();
+        }
+
+        // Créer les pictos
+        foreach ($available_types as $type) {
+            if (!empty($type['image_url'])) {
+                $pictos_v2[$type['id']] = [
+                    'type' => 'image',
+                    'value' => $type['image_url'],
+                    'name' => $type['name']
+                ];
+            } else {
+                $pictos_v2[$type['id']] = [
+                    'type' => 'emoji',
+                    'value' => $type['emoji'] ?? '',
+                    'name' => $type['name']
+                ];
+            }
+        }
+    }
+
     send_json_response(true, [
         'objective' => $objective,
         'player_name' => $player['player_name'],
-        'generated_at' => $player['generated_at']
+        'pictos' => $pictos_v2,
+        'generated_at' => $player['generated_at'],
+        'has_objective' => true,
+        'game_status' => $game_status,
+        'creator_name' => $creator_name
     ]);
 }
 

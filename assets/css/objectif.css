@@ -1,3 +1,119 @@
+/* ===========================================
+   STYLES GLOBAUX DE L'APPLICATION
+   =========================================== */
+
+/* Reset et base */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #003f53 0%, #003547 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+    line-height: 1.5;
+}
+
+/* Container principal blanc */
+.container {
+    max-width: 600px;
+    width: 100%;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 30px rgba(0,0,0,0.15);
+    padding: 40px;
+    border: 3px solid #eddeb6;
+}
+
+/* Mobile : moins de marges pour plus de contenu */
+@media (max-width: 768px) {
+    body {
+        padding: 8px;
+        align-items: flex-start;
+    }
+
+    .container {
+        padding: 12px 8px;
+        border-radius: 10px;
+        border-width: 2px;
+        position: relative;
+    }
+
+    .header {
+        margin-bottom: 15px;
+        gap: 8px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header .back-arrow {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+    }
+
+    .header h1 {
+        font-size: 1.1em;
+        padding-right: 0;
+        text-align: center;
+        width: 100%;
+        white-space: nowrap;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .section-label {
+        margin-bottom: 10px;
+        font-size: 15px;
+    }
+
+    .modern-form {
+        padding: 5px;
+    }
+}
+
+/* Header de page */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    color: #333;
+    margin: 0;
+    font-size: 1.5em;
+    flex: 1;
+    text-align: center;
+    padding-right: 39px; /* Compense la largeur de la flèche pour centrer */
+}
+
+/* Flèche retour */
+.back-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #003f53;
+    text-decoration: none;
+}
+
+.back-arrow:hover {
+    color: #002a38;
+}
+
+/* ===========================================
+   PAGE D'OBJECTIFS
+   =========================================== */
+
 /* Page d'objectifs moderne */
 .modern-objective-page {
     max-width: 600px;
@@ -11,7 +127,6 @@
     padding: 30px;
     background: white;
     border-radius: 12px;
-    border: 1px solid #e0e0e0;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
@@ -33,7 +148,6 @@
     background: white;
     padding: 30px;
     border-radius: 12px;
-    border: 1px solid #e0e0e0;
     margin-bottom: 30px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
@@ -83,7 +197,7 @@
     max-width: 300px;
     margin: 0 auto;
     padding: 15px 30px;
-    background-color: #007cba;
+    background: linear-gradient(135deg, #003f53 0%, #003547 100%);
     color: white;
     border: none;
     border-radius: 8px;
@@ -94,9 +208,9 @@
 }
 
 .generate-btn:hover {
-    background-color: #005a87;
+    background: linear-gradient(135deg, #002a38 0%, #00252f 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 124, 186, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 63, 83, 0.3);
 }
 
 .generate-btn:disabled {
@@ -109,7 +223,6 @@
 .objective-result {
     background: white;
     border-radius: 12px;
-    border: 1px solid #e0e0e0;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     overflow: hidden;
 }
@@ -117,7 +230,6 @@
 .objective-header {
     background: #f8f9fa;
     padding: 20px;
-    border-bottom: 1px solid #e0e0e0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -258,12 +370,235 @@
 
 /* Formulaire moderne */
 .modern-form {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    max-width: 100%;
+    margin: 0;
+}
+
+/* Sélecteur de quantité (nombre de joueurs) */
+.qty-selector {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 280px;
+}
+
+.qty-btn {
+    width: 60px;
+    height: 60px;
+    border: none;
+    background: linear-gradient(135deg, #003f53 0%, #003547 100%);
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qty-minus {
+    border-radius: 6px;
+}
+
+.qty-plus {
+    border-radius: 6px;
+}
+
+.qty-btn:hover {
+    background: linear-gradient(135deg, #004d66 0%, #003f53 100%);
+}
+
+.qty-btn:active {
+    transform: scale(0.95);
+}
+
+.qty-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.qty-input {
+    width: 80px;
+    height: 60px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    border: 3px solid #003f53;
+    border-radius: 6px;
     background: white;
-    padding: 30px;
+    color: #003f53;
+    -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Cartes de sélection de jeux */
+.game-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.game-card {
+    display: block;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 3px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: calc(33.333% - 8px);
+    position: relative;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.game-card:hover {
+    background: #e9ecef;
+    border-color: #003f53;
+}
+
+.game-card.checked,
+.game-card:has(input:checked) {
+    background: #e3f2fd;
+    border-color: #003f53;
+}
+
+.game-card.checked::before,
+.game-card:has(input:checked)::before {
+    content: '\2713';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 20px;
+    height: 20px;
+    background: #003f53;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.game-card input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.game-card-img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-height: 150px;
     border-radius: 8px;
-    border: 1px solid #e0e0e0;
-    max-width: 800px;
-    margin: 20px auto;
+    margin: 0 auto 10px auto;
+}
+
+.game-card-placeholder {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #003f53 0%, #003547 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.game-card-placeholder span {
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.game-card-name {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+    color: #333;
+}
+
+.game-card-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 10px;
+    padding: 2px 6px;
+    background: #003f53;
+    color: white;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+/* Responsive pour les cartes de jeux */
+@media (max-width: 400px) {
+    .game-card {
+        width: 100%;
+    }
+}
+
+/* Anciens styles game-list (conservés pour compatibilité) */
+.game-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.game-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.game-item:hover {
+    background: #e9ecef;
+}
+
+.game-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #003f53;
+}
+
+.game-item .game-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.game-item .game-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    background: #003f53;
+    color: white;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.no-games-warning {
+    color: #856404;
+    background: #fff3cd;
+    padding: 12px;
+    border-radius: 8px;
 }
 
 .form-group {
@@ -312,6 +647,36 @@
 
 .other-player-name {
     margin-bottom: 10px;
+}
+
+/* Ligne joueur avec bouton supprimer */
+.player-input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.player-input-row .form-control {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.remove-frequent-btn {
+    padding: 12px 16px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.remove-frequent-btn:hover {
+    background: #c82333;
 }
 
 /* Sélection des jeux */
@@ -475,6 +840,27 @@
     margin-top: 10px;
 }
 
+/* Mobile sticky button */
+@media (max-width: 768px) {
+    .btn-create {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: 0;
+        border-radius: 0;
+        z-index: 1000;
+        /* Safe area pour iPhone */
+        padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+        padding-top: 15px;
+    }
+
+    /* Espaceur pour éviter que le contenu soit caché par le bouton sticky */
+    .modern-form {
+        padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
 .result-container {
     margin-top: 30px;
 }
@@ -563,14 +949,28 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
+.objectif-button:disabled {
+    background: #ccc !important;
+    color: #888 !important;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.7;
+}
+
+.objectif-button:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 /* Variantes de boutons */
 .objectif-primary {
-    background-color: #007cba;
+    background: linear-gradient(135deg, #003f53 0%, #003547 100%);
     color: white;
 }
 
 .objectif-primary:hover {
-    background-color: #005a87;
+    background: linear-gradient(135deg, #002a38 0%, #00252f 100%);
     color: white;
     text-decoration: none;
 }
@@ -1071,8 +1471,7 @@
     padding: 25px;
     border-radius: 8px;
     margin: 20px 0;
-    border: 1px solid #e0e0e0;
-    border-left: 4px solid #007cba;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     text-align: center;
 }
 
@@ -1195,14 +1594,14 @@
 
 /* Boutons d'action spéciaux */
 .objectif-button.objectif-primary {
-    background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+    background: linear-gradient(135deg, #003f53 0%, #003547 100%);
     border: none;
-    box-shadow: 0 2px 8px rgba(0, 124, 186, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 63, 83, 0.3);
 }
 
 .objectif-button.objectif-primary:hover {
-    background: linear-gradient(135deg, #005a87 0%, #004563 100%);
-    box-shadow: 0 4px 12px rgba(0, 124, 186, 0.4);
+    background: linear-gradient(135deg, #002a38 0%, #00252f 100%);
+    box-shadow: 0 4px 12px rgba(0, 63, 83, 0.4);
 }
 
 .objectif-button.objectif-secondary {
@@ -1668,3 +2067,170 @@
 .scores-table tbody tr:nth-child(1) { animation-delay: 0.1s; }
 .scores-table tbody tr:nth-child(2) { animation-delay: 0.2s; }
 .scores-table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+
+/* ==========================================
+   DRAWER MOBILE - Gestion de partie
+   ========================================== */
+
+/* Bouton sticky en bas de l'écran (mobile uniquement) */
+.management-sticky-button {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #003f53 0%, #003547 100%);
+    color: white;
+    border: 3px solid #eddeb6;
+    padding: 14px 28px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0, 63, 83, 0.4);
+    transition: all 0.3s ease;
+}
+
+.management-sticky-button:hover {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 63, 83, 0.5);
+}
+
+.management-sticky-button:active {
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Overlay sombre derrière le drawer */
+.management-drawer-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.management-drawer-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Le drawer lui-même */
+.management-drawer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    z-index: 1002;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.management-drawer.open {
+    transform: translateY(0);
+}
+
+/* Poignée du drawer */
+.drawer-handle {
+    width: 40px;
+    height: 5px;
+    background: #ddd;
+    border-radius: 3px;
+    margin: 12px auto;
+}
+
+/* Header du drawer */
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.drawer-header h4 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.drawer-close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+}
+
+.drawer-close-btn:hover {
+    color: #333;
+}
+
+/* Contenu du drawer */
+.drawer-content {
+    padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+.drawer-content .management-buttons {
+    flex-direction: column;
+    gap: 12px;
+}
+
+.drawer-content .management-buttons .objectif-button {
+    width: 100%;
+    min-width: auto;
+    padding: 14px 20px;
+    font-size: 16px;
+}
+
+.drawer-content p {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.drawer-content .secondary-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+/* Sur mobile: masquer le bloc de gestion classique, afficher le bouton sticky */
+@media (max-width: 768px) {
+    /* Masquer la section de gestion classique quand le drawer est actif */
+    .creator-management.use-drawer {
+        display: none !important;
+    }
+
+    /* Afficher le bouton sticky */
+    .management-sticky-button.visible {
+        display: block;
+    }
+}
+
+/* Sur desktop: ne jamais afficher le bouton sticky ni le drawer */
+@media (min-width: 769px) {
+    .management-sticky-button,
+    .management-drawer,
+    .management-drawer-overlay {
+        display: none !important;
+    }
+}

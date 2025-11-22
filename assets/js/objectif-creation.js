@@ -5,11 +5,120 @@ window.ObjectifCreation = (function($) {
     // Joueurs fréquents sélectionnés
     let selectedFrequentPlayers = [];
 
+    // Cap maximum de joueurs (même avec toutes les extensions)
+    const MAX_PLAYERS_CAP = 8;
+
     // Initialisation au chargement
     $(document).ready(function() {
         initFrequentPlayers();
         initPlayerCountListener();
+        initQtyButtons();
+        initGameSelectionListener();
     });
+
+    // Calculer le nombre maximum de joueurs basé sur les jeux sélectionnés
+    function calculateMaxPlayers() {
+        let baseMax = 2; // Minimum par défaut
+        let extensionBonus = 0;
+
+        $('input[name="games[]"]:checked').each(function() {
+            const isBase = $(this).data('is-base') == 1;
+            const bonusPlayers = parseInt($(this).data('bonus-players')) || 0;
+
+            if (isBase) {
+                // Pour le jeu de base, bonus_players = nombre max de joueurs
+                baseMax = Math.max(baseMax, bonusPlayers);
+            } else {
+                // Pour les extensions, bonus_players = bonus ajouté
+                extensionBonus += bonusPlayers;
+            }
+        });
+
+        // Total = base + extensions, cappé à MAX_PLAYERS_CAP
+        return Math.min(baseMax + extensionBonus, MAX_PLAYERS_CAP);
+    }
+
+    // Mettre à jour l'input max et les boutons
+    function updateMaxPlayersUI() {
+        const $input = $('#objectif-player-count');
+        const newMax = calculateMaxPlayers();
+        const currentVal = parseInt($input.val()) || 2;
+
+        // Mettre à jour l'attribut max
+        $input.attr('max', newMax);
+
+        // Si la valeur actuelle dépasse le nouveau max, l'ajuster
+        if (currentVal > newMax) {
+            $input.val(newMax).trigger('change');
+        }
+
+        // Mettre à jour l'état des boutons
+        updateQtyButtons();
+    }
+
+    // Mettre à jour l'état des boutons +/-
+    function updateQtyButtons() {
+        const $input = $('#objectif-player-count');
+        const $minusBtn = $('#qty-minus');
+        const $plusBtn = $('#qty-plus');
+
+        if (!$input.length) return;
+
+        const min = parseInt($input.attr('min')) || 2;
+        const max = parseInt($input.attr('max')) || 4;
+        const val = parseInt($input.val()) || min;
+
+        $minusBtn.prop('disabled', val <= min);
+        $plusBtn.prop('disabled', val >= max);
+    }
+
+    // Initialiser les boutons +/- pour le nombre de joueurs
+    function initQtyButtons() {
+        const $input = $('#objectif-player-count');
+        const $minusBtn = $('#qty-minus');
+        const $plusBtn = $('#qty-plus');
+
+        if (!$input.length) return;
+
+        // Calculer le max initial
+        updateMaxPlayersUI();
+
+        $minusBtn.on('click', function() {
+            const min = parseInt($input.attr('min')) || 2;
+            const val = parseInt($input.val()) || min;
+            if (val > min) {
+                $input.val(val - 1).trigger('change');
+            }
+            updateQtyButtons();
+        });
+
+        $plusBtn.on('click', function() {
+            const max = parseInt($input.attr('max')) || 4;
+            const val = parseInt($input.val()) || 2;
+            if (val < max) {
+                $input.val(val + 1).trigger('change');
+            }
+            updateQtyButtons();
+        });
+
+        updateQtyButtons();
+    }
+
+    // Écouter les changements de sélection de jeux
+    function initGameSelectionListener() {
+        $(document).on('change', 'input[name="games[]"]', function() {
+            // Toggle la classe checked sur le label parent
+            const $label = $(this).closest('.game-card');
+            if ($(this).is(':checked')) {
+                $label.addClass('checked');
+            } else {
+                $label.removeClass('checked');
+            }
+
+            // Recalculer le max de joueurs
+            updateMaxPlayersUI();
+        });
+    }
 
     // Initialiser les joueurs fréquents si connecté
     function initFrequentPlayers() {
@@ -106,9 +215,9 @@ window.ObjectifCreation = (function($) {
         // D'abord les joueurs fréquents sélectionnés
         selectedFrequentPlayers.slice(0, otherPlayersNeeded).forEach(function(name, i) {
             $container.append(`
-                <div class="player-input-row" style="display:flex; gap:10px; margin-bottom:10px;">
-                    <input type="text" class="form-control other-player-name" value="${name}" placeholder="Prénom du joueur ${i + 2}" required style="flex:1;">
-                    <button type="button" class="remove-frequent-btn" data-name="${name}" style="padding:8px 12px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer;">×</button>
+                <div class="player-input-row">
+                    <input type="text" class="form-control other-player-name" value="${name}" placeholder="Prénom du joueur ${i + 2}" required>
+                    <button type="button" class="remove-frequent-btn" data-name="${name}">×</button>
                 </div>
             `);
         });
@@ -168,11 +277,20 @@ window.ObjectifCreation = (function($) {
         const playerCount = parseInt($('#objectif-player-count').val());
         const creatorName = $('#objectif-creator-name').val().trim();
         const difficulty = 'normal'; // Difficulté unique
-        const baseGame = $('input[name="base_game"]:checked').val();
+
+        // Nouveau format : tous les jeux sont dans games[] avec data-is-base
+        let baseGame = null;
         const extensions = [];
 
-        $('input[name="extensions[]"]:checked').each(function() {
-            extensions.push($(this).val());
+        $('input[name="games[]"]:checked').each(function() {
+            const gameId = $(this).val();
+            const isBase = $(this).data('is-base') == 1;
+
+            if (isBase) {
+                baseGame = gameId;
+            } else {
+                extensions.push(gameId);
+            }
         });
 
         const otherNames = [];

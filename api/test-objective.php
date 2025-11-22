@@ -40,24 +40,35 @@ function generate_test_objectives() {
     // Récupérer les données POST
     $input = json_decode(file_get_contents('php://input'), true);
 
-    $game_set_id = clean_int($input['game_set_id'] ?? 0);
+    // Support pour un seul game_set_id (ancien format) ou plusieurs game_set_ids (nouveau format)
+    $game_set_ids = [];
+    if (!empty($input['game_set_ids']) && is_array($input['game_set_ids'])) {
+        $game_set_ids = array_map('intval', $input['game_set_ids']);
+    } elseif (!empty($input['game_set_id'])) {
+        $game_set_ids = [clean_int($input['game_set_id'])];
+    }
+
     $difficulty = clean_string($input['difficulty'] ?? 'normal');
     $player_counts = $input['player_counts'] ?? [2, 3, 4];
 
-    if (!$game_set_id) {
-        send_json_response(false, [], 'Game Set ID manquant');
+    if (empty($game_set_ids)) {
+        send_json_response(false, [], 'Game Set ID(s) manquant(s)');
     }
 
-    // Récupérer les types disponibles
+    // Récupérer les types disponibles pour TOUS les jeux sélectionnés
+    $placeholders = implode(',', array_fill(0, count($game_set_ids), '?'));
     $stmt = $pdo->prepare("
-        SELECT t.*, st.is_limited, st.max_quantity
+        SELECT DISTINCT t.*, st.is_limited, st.max_quantity
         FROM " . DB_PREFIX . "types t
         JOIN " . DB_PREFIX . "set_types st ON t.id = st.type_id
-        WHERE st.game_set_id = ?
+        WHERE st.game_set_id IN ($placeholders)
         ORDER BY t.display_order
     ");
-    $stmt->execute([$game_set_id]);
+    $stmt->execute($game_set_ids);
     $available_types = $stmt->fetchAll();
+
+    // Utiliser le premier game_set_id pour la config de difficulté (jeu de base prioritaire)
+    $primary_game_set_id = $game_set_ids[0];
 
     if (empty($available_types)) {
         send_json_response(false, [], "Aucun type d'objectif configuré pour ce jeu");
@@ -91,20 +102,88 @@ function generate_test_objectives() {
     }
 
     // Analyser la distribution pour identifier les types rares
-    $distribution = analyze_type_distribution($game_set_id);
+    // Combiner les distributions de tous les jeux sélectionnés
+    // OPTIMISATION: Stocker les distributions individuelles pour réutilisation
+    $distributions_by_game = [];
+    $distribution = [];
+    foreach ($game_set_ids as $gsid) {
+        $gs_distribution = analyze_type_distribution($gsid);
+        $distributions_by_game[$gsid] = $gs_distribution; // Stocker pour réutilisation
+        foreach ($gs_distribution as $type_id => $data) {
+            if (!isset($distribution[$type_id])) {
+                $distribution[$type_id] = $data;
+            } else {
+                // Combiner les données
+                $distribution[$type_id]['total_symbols'] += $data['total_symbols'];
+                $distribution[$type_id]['card_count'] += $data['card_count'];
+                $distribution[$type_id]['max_on_card'] = max($distribution[$type_id]['max_on_card'], $data['max_on_card']);
+                $distribution[$type_id]['cards_list'] = array_merge($distribution[$type_id]['cards_list'], $data['cards_list']);
+            }
+        }
+    }
+
+    // OPTIMISATION: Pré-calculer les limites de type pour 4 joueurs (la base)
+    // Une seule fois au lieu de les recalculer dans chaque boucle
+    $type_limits_4players = [];
+    foreach ($game_set_ids as $gsid) {
+        $gs_distribution = $distributions_by_game[$gsid] ?? null;
+        $gs_limits = get_type_limits_by_player_count($pdo, $gsid, 4, $gs_distribution);
+        foreach ($gs_limits as $type_id => $limit) {
+            if (!isset($type_limits_4players[$type_id])) {
+                $type_limits_4players[$type_id] = $limit;
+            } else {
+                $type_limits_4players[$type_id] += $limit;
+            }
+        }
+    }
 
     // Séparer types abondants et rares selon la distribution RÉELLE
+    // IMPORTANT: Exclure les types qui n'ont AUCUN symbole dans les cartes
     $abundant_types = [];
     $rare_types = [];
+    $all_valid_types = []; // Types avec au moins 1 symbole
 
     foreach ($available_types as $type) {
+        // Si le type n'existe pas dans la distribution = 0 cartes = on l'ignore complètement
+        if (!isset($distribution[$type['id']])) {
+            continue; // Type avec 0 symboles, on l'exclut
+        }
+
+        $all_valid_types[] = $type; // Ce type a des symboles, il est valide
+
         // Un type est considéré rare s'il a < 15 symboles total
-        $is_rare = isset($distribution[$type['id']]) && $distribution[$type['id']]['total_symbols'] < 15;
+        $is_rare = $distribution[$type['id']]['total_symbols'] < 15;
 
         if ($is_rare) {
             $rare_types[] = $type;
         } else {
             $abundant_types[] = $type;
+        }
+    }
+
+    // Vérifier qu'il reste des types valides après filtrage
+    if (empty($all_valid_types)) {
+        send_json_response(false, [], "Aucun type avec des symboles sur les cartes de ce jeu");
+    }
+
+    // OPTIMISATION: Pré-charger toutes les configurations de difficulté en une seule requête
+    $stmt = $pdo->prepare("SELECT types_count, min_quantity, max_quantity, generation_weight
+        FROM " . DB_PREFIX . "difficulty_config
+        WHERE game_set_id = ? AND difficulty = ?");
+    $stmt->execute([$primary_game_set_id, $difficulty]);
+    $difficulty_configs_raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Indexer par types_count pour accès rapide O(1)
+    $difficulty_configs = [];
+    $generation_weights = [];
+    foreach ($difficulty_configs_raw as $config) {
+        $tc = $config['types_count'];
+        $difficulty_configs[$tc] = [
+            'min_quantity' => $config['min_quantity'],
+            'max_quantity' => $config['max_quantity']
+        ];
+        if ($config['generation_weight'] > 0) {
+            $generation_weights[$tc] = $config['generation_weight'];
         }
     }
 
@@ -121,8 +200,19 @@ function generate_test_objectives() {
         while (!$is_unique && $attempt < $max_attempts) {
             $attempt++;
 
-            // Chaque joueur a son propre nombre de types (généré aléatoirement)
-            $types_count = select_types_count_weighted($pdo, $game_set_id, $difficulty, count($available_types));
+            // OPTIMISATION: Sélection pondérée locale (évite requête SQL)
+            $max_types = count($all_valid_types);
+            $valid_weights = array_filter($generation_weights, function($tc) use ($max_types) {
+                return $tc <= $max_types;
+            }, ARRAY_FILTER_USE_KEY);
+
+            if (empty($valid_weights)) {
+                // Fallback: distribution uniforme 1-3
+                $types_count = rand(1, min(3, $max_types));
+            } else {
+                // Sélection pondérée
+                $types_count = weighted_random($valid_weights);
+            }
 
             // Pour 1-2 types : utiliser uniquement les types abondants (pas de Zombies/Sorcière x1)
             if ($types_count <= 2) {
@@ -134,23 +224,18 @@ function generate_test_objectives() {
                 }
                 $available_for_selection = $abundant_types;
             } else {
-                // Pour 3+ types, on peut mélanger types abondants ET rares
-                $available_for_selection = $available_types;
+                // Pour 3+ types, on peut mélanger types abondants ET rares (mais jamais les types à 0 symboles)
+                $available_for_selection = $all_valid_types;
             }
 
-            // Récupérer la configuration de difficulté pour ce nombre de types
-            $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "difficulty_config
-                WHERE game_set_id = ? AND difficulty = ? AND types_count = ?");
-            $stmt->execute([$game_set_id, $difficulty, $types_count]);
-            $difficulty_config = $stmt->fetch();
-
-            if (!$difficulty_config) {
+            // OPTIMISATION: Utiliser la config pré-chargée
+            if (!isset($difficulty_configs[$types_count])) {
                 // Valeurs par défaut
                 $min_quantity = 3;
                 $max_quantity = 8;
             } else {
-                $min_quantity = $difficulty_config['min_quantity'];
-                $max_quantity = $difficulty_config['max_quantity'];
+                $min_quantity = $difficulty_configs[$types_count]['min_quantity'];
+                $max_quantity = $difficulty_configs[$types_count]['max_quantity'];
             }
 
             // Sélectionner aléatoirement les types pour ce joueur
@@ -203,8 +288,8 @@ function generate_test_objectives() {
                 }
             }
 
-            // Obtenir les limites réalistes par type pour 4 joueurs (la base)
-            $type_limits = get_type_limits_by_player_count($pdo, $game_set_id, 4);
+            // OPTIMISATION: Utiliser les limites pré-calculées au lieu de les recalculer
+            $type_limits = $type_limits_4players;
 
             // Générer l'objectif de BASE pour 4 joueurs
             // min_quantity et max_quantity sont les valeurs PER TYPE (pas le total)

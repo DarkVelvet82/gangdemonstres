@@ -3,18 +3,26 @@ window.ObjectifNotifications = (function($) {
     'use strict';
 
     let notificationInterval = null;
-    let lastNotificationCheck = 0;
+    // Initialiser avec le timestamp actuel pour ignorer les anciennes notifications au chargement
+    let lastNotificationCheck = Math.floor(Date.now() / 1000);
 
     // Démarrer la vérification des notifications
     function startNotificationChecking() {
         const playerId = localStorage.getItem('objectif_player_id');
         if (!playerId) return;
 
-        console.log('🔔 Démarrage de la vérification des notifications');
-        
+        // IMPORTANT: Arrêter l'ancien interval avant d'en créer un nouveau
+        if (notificationInterval) {
+            console.log('🔔 Arrêt de l\'ancien interval avant redémarrage');
+            clearInterval(notificationInterval);
+            notificationInterval = null;
+        }
+
+        console.log('🔔 Démarrage de la vérification des notifications (ignorant avant ' + lastNotificationCheck + ')');
+
         // Vérification immédiate
         checkNotifications();
-        
+
         // Puis toutes les 5 secondes
         notificationInterval = setInterval(() => {
             checkNotifications();
@@ -35,6 +43,8 @@ window.ObjectifNotifications = (function($) {
         const playerId = localStorage.getItem('objectif_player_id');
         if (!playerId) return;
 
+        const ajaxStartTime = performance.now();
+
         $.ajax({
             method: 'POST',
             url: objectif_ajax.ajax_url,
@@ -44,6 +54,11 @@ window.ObjectifNotifications = (function($) {
                 player_id: playerId
             },
             success: function(response) {
+                const ajaxDuration = Math.round(performance.now() - ajaxStartTime);
+                // Log uniquement si > 500ms pour éviter le spam
+                if (ajaxDuration > 500) {
+                    console.warn(`⏱️ [PERF] Notification check LENT: ${ajaxDuration}ms`);
+                }
                 if (response.success) {
                     handleNotifications(response.data);
                 }
@@ -86,6 +101,14 @@ window.ObjectifNotifications = (function($) {
         // Supprimer les anciennes notifications
         $('.game-notification').remove();
 
+        // Vider l'affichage de l'objectif en cours pour éviter la confusion
+        // L'utilisateur verra un message indiquant que la partie est terminée
+        $('.objective-result').fadeOut(300, function() {
+            $(this).remove();
+        });
+        // Masquer aussi les boutons de gestion créateur
+        $('#creator-management').fadeOut(300);
+
         const isWinner = notification.is_winner;
         const resultClass = isWinner ? 'winner' : 'loser';
         const resultIcon = isWinner ? '🏆' : '😔';
@@ -93,8 +116,11 @@ window.ObjectifNotifications = (function($) {
         const resultBg = isWinner ? '#d4edda' : '#f8d7da';
         const resultBorder = isWinner ? '#28a745' : '#dc3545';
 
+        // Stocker le nom du gestionnaire pour le message d'attente
+        const managerName = notification.ended_by;
+
         const notificationHtml = `
-            <div class="game-notification game-ended ${resultClass}" style="
+            <div class="game-notification game-ended ${resultClass}" data-manager-name="${managerName}" style="
                 position: fixed;
                 top: 20px;
                 right: 20px;
@@ -118,14 +144,14 @@ window.ObjectifNotifications = (function($) {
                         </p>
                     </div>
                 </div>
-                
+
                 <div style="background: rgba(255,255,255,0.7); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
                     <p style="margin: 0; font-size: 14px; color: #333;">
                         <strong>🏆 Gagnant :</strong> ${notification.winner_name}<br>
                         <strong>👑 Terminé par :</strong> ${notification.ended_by}
                     </p>
                 </div>
-                
+
                 <div style="text-align: center;">
                     <button id="close-notification" style="
                         background: #6c757d;
@@ -144,10 +170,41 @@ window.ObjectifNotifications = (function($) {
 
         $('body').append(notificationHtml);
 
-        // Auto-fermeture après 10 secondes
+        // Fonction pour afficher le message d'attente
+        function showWaitingMessage() {
+            const isCreator = localStorage.getItem('objectif_is_creator');
+
+            // Afficher le message d'attente uniquement pour les non-créateurs
+            if (isCreator !== '1' && isCreator !== 1 && isCreator !== true) {
+                const waitingHtml = `
+                    <div class="waiting-message" style="
+                        text-align: center;
+                        padding: 30px 20px;
+                        background: linear-gradient(135deg, rgba(0, 63, 83, 0.1) 0%, rgba(0, 53, 71, 0.1) 100%);
+                        border-radius: 12px;
+                        margin-top: 20px;
+                    ">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⏳</div>
+                        <h3 style="color: #003f53; margin: 0 0 15px 0; font-size: 20px;">
+                            En attente de la prochaine partie
+                        </h3>
+                        <p style="color: #555; margin: 0; font-size: 16px; line-height: 1.5;">
+                            Patientez avant le lancement de la prochaine partie par <strong>${managerName}</strong>.
+                        </p>
+                        <p style="color: #777; margin: 10px 0 0 0; font-size: 14px;">
+                            Vous pourrez alors générer un nouvel objectif.
+                        </p>
+                    </div>
+                `;
+                $('#objectif-state').html(waitingHtml);
+            }
+        }
+
+        // Auto-fermeture après 10 secondes + affichage message d'attente
         setTimeout(() => {
             $('.game-notification').fadeOut(300, function() {
                 $(this).remove();
+                showWaitingMessage();
             });
         }, 10000);
     }
@@ -156,8 +213,24 @@ window.ObjectifNotifications = (function($) {
     function showGameRestartedNotification(notification) {
         console.log('🔄 Notification nouvelle partie:', notification);
 
+        // Incrémenter le compteur de parties jouées (pour messages d'encouragement)
+        const gamesPlayed = parseInt(localStorage.getItem('objectif_games_played') || '0');
+        localStorage.setItem('objectif_games_played', gamesPlayed + 1);
+
         // Supprimer les anciennes notifications
         $('.game-notification').remove();
+
+        // Vider l'ancien objectif et afficher le bouton pour en générer un nouveau
+        $('.objective-result').fadeOut(300, function() {
+            $(this).remove();
+        });
+        $('#creator-management').fadeOut(300);
+
+        // Vider le contenu de #objectif-state
+        $('#objectif-state').html('');
+
+        // Réafficher la section de génération (bouton + titre)
+        $('.objective-generator').fadeIn(300);
 
         const notificationHtml = `
             <div class="game-notification game-restarted" style="
@@ -315,7 +388,42 @@ window.ObjectifNotifications = (function($) {
     }
 
     // Event handlers pour les notifications
-    $(document).on('click', '#close-notification, #close-restart-notification', function() {
+    $(document).on('click', '#close-notification', function() {
+        const $notification = $(this).closest('.game-notification');
+        const managerName = $notification.data('manager-name');
+
+        $notification.fadeOut(300, function() {
+            $(this).remove();
+
+            // Afficher le message d'attente pour les non-créateurs
+            const isCreator = localStorage.getItem('objectif_is_creator');
+            if (isCreator !== '1' && isCreator !== 1 && isCreator !== true && managerName) {
+                const waitingHtml = `
+                    <div class="waiting-message" style="
+                        text-align: center;
+                        padding: 30px 20px;
+                        background: linear-gradient(135deg, rgba(0, 63, 83, 0.1) 0%, rgba(0, 53, 71, 0.1) 100%);
+                        border-radius: 12px;
+                        margin-top: 20px;
+                    ">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⏳</div>
+                        <h3 style="color: #003f53; margin: 0 0 15px 0; font-size: 20px;">
+                            En attente de la prochaine partie
+                        </h3>
+                        <p style="color: #555; margin: 0; font-size: 16px; line-height: 1.5;">
+                            Patientez avant le lancement de la prochaine partie par <strong>${managerName}</strong>.
+                        </p>
+                        <p style="color: #777; margin: 10px 0 0 0; font-size: 14px;">
+                            Vous pourrez alors générer un nouvel objectif.
+                        </p>
+                    </div>
+                `;
+                $('#objectif-state').html(waitingHtml);
+            }
+        });
+    });
+
+    $(document).on('click', '#close-restart-notification', function() {
         $('.game-notification').fadeOut(300, function() {
             $(this).remove();
         });

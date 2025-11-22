@@ -1,36 +1,35 @@
+<?php
+require_once __DIR__ . '/../includes/front-header.php';
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gang de Monstres - Objectifs Multijoueur</title>
+    <title><?php echo htmlspecialchars($site_name); ?> - Objectifs Multijoueur</title>
     <link rel="stylesheet" href="../assets/css/objectif.css">
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            padding: 20px;
-        }
-
         .home-container {
             background: white;
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 30px rgba(0,0,0,0.15);
             max-width: 600px;
             width: 100%;
             padding: 40px;
             text-align: center;
+            border: 3px solid #eddeb6;
+        }
+
+        .site-logo {
+            max-width: 280px;
+            max-height: 100px;
+            margin-bottom: 20px;
         }
 
         .home-title {
             font-size: 2.5em;
             margin: 0 0 10px 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #003f53 0%, #003547 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -62,13 +61,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #003f53 0%, #003547 100%);
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 63, 83, 0.4);
         }
 
         .btn-secondary {
@@ -100,31 +99,34 @@
 </head>
 <body>
     <div class="home-container">
-        <h1 class="home-title">🎮 Gang de Monstres</h1>
-        <p class="home-subtitle">Objectifs Multijoueur</p>
+        <?php if ($logo_path && file_exists(__DIR__ . '/' . $logo_path)): ?>
+            <img src="<?php echo htmlspecialchars($logo_path); ?>" alt="<?php echo htmlspecialchars($site_name); ?>" class="site-logo">
+        <?php else: ?>
+            <h1 class="home-title">🎮 <?php echo htmlspecialchars($site_name); ?></h1>
+        <?php endif; ?>
 
-        <p>Bienvenue dans le générateur d'objectifs pour Gang de Monstres! Créez une partie ou rejoignez-en une existante.</p>
+        <p>Bienvenue dans le générateur d'objectifs pour <?php echo htmlspecialchars($site_name); ?>! Créez une partie ou rejoignez-en une existante.</p>
 
         <div class="action-buttons">
             <a href="creer-partie.php" class="action-btn btn-primary">
-                ✨ Créer une nouvelle partie
+                Créer une nouvelle partie
             </a>
 
             <a href="rejoindre.php" class="action-btn btn-secondary">
-                🔗 Rejoindre une partie existante
+                Rejoindre une partie existante
             </a>
 
             <a href="compte.php" class="action-btn btn-secondary">
-                👤 Mon compte
+                Mon compte / créer un compte
             </a>
 
             <a href="scores.php" class="action-btn btn-secondary">
-                🏆 Voir les scores
+                Voir les scores
             </a>
         </div>
 
         <div class="admin-link">
-            <a href="../admin/">🔧 Administration</a>
+            <a href="../admin/">Administration</a>
         </div>
     </div>
 </body>

@@ -1,16 +1,23 @@
+<?php
+require_once __DIR__ . '/../includes/front-header.php';
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scores - Gang de Monstres</title>
+    <title>Scores - <?php echo htmlspecialchars($site_name); ?></title>
     <link rel="stylesheet" href="../assets/css/objectif.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         .scores-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 30px rgba(0,0,0,0.15);
+            padding: 40px;
+            border: 3px solid #eddeb6;
         }
 
         .scores-header {
@@ -31,7 +38,7 @@
         }
 
         .scores-table th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #003f53 0%, #003547 100%);
             color: white;
             padding: 15px;
             text-align: left;
@@ -78,7 +85,7 @@
 
         .filter-section button {
             padding: 10px 20px;
-            background: #667eea;
+            background: #003f53;
             color: white;
             border: none;
             border-radius: 8px;
@@ -87,7 +94,7 @@
         }
 
         .filter-section button:hover {
-            background: #5568d3;
+            background: #002a38;
         }
 
         .loading {
@@ -100,8 +107,10 @@
 <body>
     <div class="scores-container">
         <div class="header">
-            <a href="index.php" class="back-link">← Retour</a>
-            <h1 class="scores-header">🏆 Tableau des scores</h1>
+            <a href="index.php" class="back-arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M244 400L100 256l144-144M120 256h292"/></svg>
+            </a>
+            <h1>Tableau des scores</h1>
         </div>
 
         <div class="filter-section">
