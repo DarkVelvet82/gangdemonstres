@@ -64,16 +64,13 @@ jobs:
           # Write production DB secrets from GitHub secrets (optional)
           mkdir -p dist/gang-de-monstres-standalone/config
           if [ -n "${DB_HOST}" ] && [ -n "${DB_NAME}" ] && [ -n "${DB_USER}" ] && [ -n "${DB_PASS}" ]; then
-            cat > dist/gang-de-monstres-standalone/config/secrets.php <<SECRETS
-            <?php
-            if (!defined('DB_HOST')) define('DB_HOST', '${DB_HOST}');
-            if (!defined('DB_NAME')) define('DB_NAME', '${DB_NAME}');
-            if (!defined('DB_USER')) define('DB_USER', '${DB_USER}');
-            if (!defined('DB_PASS')) define('DB_PASS', '${DB_PASS}');
-            ?>
-SECRETS
+            echo "<?php" > dist/gang-de-monstres-standalone/config/secrets.php
+            echo "if (!defined('DB_HOST')) define('DB_HOST', '${DB_HOST}');" >> dist/gang-de-monstres-standalone/config/secrets.php
+            echo "if (!defined('DB_NAME')) define('DB_NAME', '${DB_NAME}');" >> dist/gang-de-monstres-standalone/config/secrets.php
+            echo "if (!defined('DB_USER')) define('DB_USER', '${DB_USER}');" >> dist/gang-de-monstres-standalone/config/secrets.php
+            echo "if (!defined('DB_PASS')) define('DB_PASS', '${DB_PASS}');" >> dist/gang-de-monstres-standalone/config/secrets.php
           else
-            echo "[deploy] DB secrets not set; skipping secrets.php";
+            echo "[deploy] DB secrets not set; skipping secrets.php"
           fi
 
           # Protections dossiers sensibles
