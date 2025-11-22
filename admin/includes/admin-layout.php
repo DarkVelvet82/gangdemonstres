@@ -185,6 +185,129 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 position: relative;
             }
         }
+
+        /* Boutons globaux */
+        .submit-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        .submit-button:active {
+            transform: translateY(0);
+        }
+        .submit-button.btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+        .submit-button.btn-success:hover {
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+        }
+        .submit-button.btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+            box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+        }
+        .submit-button.btn-info:hover {
+            box-shadow: 0 6px 20px rgba(23, 162, 184, 0.5);
+        }
+        .submit-button.btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+            color: #1a1a1a;
+        }
+        .submit-button.btn-warning:hover {
+            box-shadow: 0 6px 20px rgba(255, 193, 7, 0.5);
+        }
+        .submit-button.btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+        .submit-button.btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.5);
+        }
+        .btn-delete {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+        .btn-delete:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        .btn-edit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        .btn-edit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            color: #fff;
+        }
+
+        /* Card générique */
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 20px;
+        }
+
+        /* Messages */
+        .message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .message.success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .message.warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
     </style>
     <?php if (isset($extra_styles)) echo $extra_styles; ?>
 </head>
@@ -210,13 +333,16 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <span class="icon">🃏</span> Cartes
             </a>
             <a href="difficulty.php" class="nav-item <?php echo $current_page === 'difficulty.php' ? 'active' : ''; ?>">
-                <span class="icon">⚡</span> Difficultés
+                <span class="icon">⚡</span> Génération objectif
             </a>
             <a href="analyze-distribution.php" class="nav-item <?php echo $current_page === 'analyze-distribution.php' ? 'active' : ''; ?>">
                 <span class="icon">📈</span> Analyse Distribution
             </a>
             <a href="stats.php" class="nav-item <?php echo $current_page === 'stats.php' ? 'active' : ''; ?>">
                 <span class="icon">📉</span> Statistiques
+            </a>
+            <a href="users.php" class="nav-item <?php echo $current_page === 'users.php' ? 'active' : ''; ?>">
+                <span class="icon">👥</span> Utilisateurs
             </a>
             <a href="test-player-multiplier.php" class="nav-item <?php echo $current_page === 'test-player-multiplier.php' ? 'active' : ''; ?>">
                 <span class="icon">🧪</span> Test Multiplicateur

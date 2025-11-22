@@ -436,15 +436,43 @@ window.ObjectifScores = (function($) {
     }
 
     function quitSession() {
+        const gameId = localStorage.getItem('objectif_game_id');
+        const playerId = localStorage.getItem('objectif_player_id');
+        const isCreator = localStorage.getItem('objectif_is_creator') === '1';
+
+        // Si c'est le créateur, notifier les autres joueurs via l'API
+        if (isCreator && gameId && playerId) {
+            $.ajax({
+                method: 'POST',
+                url: objectif_ajax.ajax_url,
+                data: {
+                    action: 'objectif_close_session',
+                    nonce: objectif_ajax.nonce,
+                    game_id: gameId,
+                    player_id: playerId
+                },
+                success: function(response) {
+                    console.log('🚪 Session fermée:', response);
+                },
+                error: function() {
+                    console.log('⚠️ Erreur lors de la fermeture de session');
+                }
+            });
+        }
+
+        // Nettoyer le localStorage
         localStorage.removeItem('objectif_player_id');
         localStorage.removeItem('objectif_game_id');
         localStorage.removeItem('objectif_is_creator');
-        
+
+        // Masquer le bloc de génération d'objectif
+        $('.objective-generator').hide();
+
         $('#objectif-state').html(`
             <div class="objectif-quit-success">
                 <h3>👋 Session terminée</h3>
                 <p>Merci d'avoir joué !</p>
-                <a href="/" class="objectif-button objectif-primary">🏠 Retour à l'accueil</a>
+                <a href="index.php" class="objectif-button objectif-primary">🏠 Retour à l'accueil</a>
             </div>
         `);
     }

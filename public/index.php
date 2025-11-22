@@ -114,6 +114,10 @@
                 🔗 Rejoindre une partie existante
             </a>
 
+            <a href="compte.php" class="action-btn btn-secondary">
+                👤 Mon compte
+            </a>
+
             <a href="scores.php" class="action-btn btn-secondary">
                 🏆 Voir les scores
             </a>

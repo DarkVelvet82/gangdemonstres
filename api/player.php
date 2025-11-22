@@ -26,6 +26,10 @@ try {
             check_objective();
             break;
 
+        case 'info':
+            get_player_info();
+            break;
+
         default:
             send_json_response(false, [], 'Action non reconnue');
     }
@@ -339,5 +343,41 @@ function check_objective() {
         'objective' => $objective,
         'player_name' => $player['player_name'],
         'generated_at' => $player['generated_at']
+    ]);
+}
+
+/**
+ * Récupérer les informations basiques d'un joueur (nom, statut)
+ */
+function get_player_info() {
+    global $pdo;
+
+    $nonce = get_post_value('nonce');
+    if (!verify_nonce($nonce)) {
+        send_json_response(false, [], 'Nonce invalide');
+    }
+
+    $player_id = clean_int(get_post_value('player_id', 0));
+
+    if (!$player_id) {
+        send_json_response(false, [], 'Player ID manquant');
+    }
+
+    $stmt = $pdo->prepare("SELECT p.*, g.status as game_status FROM " . DB_PREFIX . "players p
+        LEFT JOIN " . DB_PREFIX . "games g ON p.game_id = g.id
+        WHERE p.id = ?");
+    $stmt->execute([$player_id]);
+    $player = $stmt->fetch();
+
+    if (!$player) {
+        send_json_response(false, [], 'Joueur introuvable');
+    }
+
+    send_json_response(true, [
+        'player_id' => $player['id'],
+        'player_name' => $player['player_name'],
+        'is_creator' => (bool)$player['is_creator'],
+        'has_objective' => !empty($player['objective_json']),
+        'game_status' => $player['game_status']
     ]);
 }

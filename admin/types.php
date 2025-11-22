@@ -114,7 +114,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message_type = 'error';
             }
         }
+
+        // Modifier un type
+        if ($_POST['action'] === 'edit_type' && isset($_POST['type_id'])) {
+            $type_id = (int)$_POST['type_id'];
+            $name = trim($_POST['type_name']);
+            $image_url = $_POST['existing_image_url'] ?? '';
+
+            // Gérer l'upload d'une nouvelle image (optionnel)
+            if (isset($_FILES['type_image']) && $_FILES['type_image']['error'] === UPLOAD_ERR_OK) {
+                $upload_dir = __DIR__ . '/../assets/uploads/types/';
+
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0755, true);
+                }
+
+                $file_tmp = $_FILES['type_image']['tmp_name'];
+                $file_name = $_FILES['type_image']['name'];
+                $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+
+                $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+                if (in_array($file_ext, $allowed_extensions)) {
+                    $filename_base = $name;
+                    $filename_base = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $filename_base);
+                    $filename_base = strtolower($filename_base);
+                    $filename_base = preg_replace('/[^a-z0-9]+/', '-', $filename_base);
+                    $filename_base = trim($filename_base, '-');
+
+                    $new_filename = $filename_base . '-' . time() . '.' . $file_ext;
+                    $upload_path = $upload_dir . $new_filename;
+
+                    if (move_uploaded_file($file_tmp, $upload_path)) {
+                        $image_url = '../assets/uploads/types/' . $new_filename;
+                    }
+                }
+            }
+
+            try {
+                $stmt = $pdo->prepare("UPDATE " . DB_PREFIX . "types SET name = ?, image_url = ? WHERE id = ?");
+                $stmt->execute([$name, $image_url, $type_id]);
+
+                $message = 'Type modifié avec succès !';
+                $message_type = 'success';
+
+                header('Location: types.php?success=1');
+                exit;
+            } catch (PDOException $e) {
+                $message = 'Erreur lors de la modification : ' . $e->getMessage();
+                $message_type = 'error';
+            }
+        }
     }
+}
+
+// Mode édition : récupérer le type à éditer
+$edit_type = null;
+if (isset($_GET['edit']) && $_GET['edit'] > 0) {
+    $edit_id = (int)$_GET['edit'];
+    $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "types WHERE id = ?");
+    $stmt->execute([$edit_id]);
+    $edit_type = $stmt->fetch();
 }
 
 // Récupérer tous les types
@@ -191,24 +250,42 @@ require_once __DIR__ . '/includes/admin-layout.php';
     </div>
 <?php endif; ?>
 
-<!-- Formulaire d'ajout -->
+<!-- Formulaire d'ajout/édition -->
 <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px;">
-    <h2 style="margin: 0 0 20px 0; font-size: 20px; color: #333;">Ajouter un nouveau type</h2>
+    <h2 style="margin: 0 0 20px 0; font-size: 20px; color: #333;">
+        <?php echo $edit_type ? 'Modifier le type' : 'Ajouter un nouveau type'; ?>
+    </h2>
+    <?php if ($edit_type): ?>
+        <p style="color:#667eea; margin-bottom:15px; font-weight:600;">
+            Mode édition - <a href="types.php" style="color:#dc3545;">Annuler et revenir</a>
+        </p>
+    <?php endif; ?>
     <form method="post" enctype="multipart/form-data">
-        <input type="hidden" name="action" value="add_type">
+        <input type="hidden" name="action" value="<?php echo $edit_type ? 'edit_type' : 'add_type'; ?>">
+        <?php if ($edit_type): ?>
+            <input type="hidden" name="type_id" value="<?php echo $edit_type['id']; ?>">
+            <input type="hidden" name="existing_image_url" value="<?php echo htmlspecialchars($edit_type['image_url']); ?>">
+        <?php endif; ?>
         <div style="display: grid; grid-template-columns: 1fr auto; gap: 30px; margin-bottom: 20px;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">Nom du type</label>
-                    <input type="text" name="type_name" required class="regular-text" placeholder="Ex: Zombie, Sorcière..." style="width: 100%;">
+                    <input type="text" name="type_name" required class="regular-text" placeholder="Ex: Zombie, Sorcière..." style="width: 100%;"
+                           value="<?php echo $edit_type ? htmlspecialchars($edit_type['name']) : ''; ?>">
                 </div>
                 <div>
                     <label style="display: block; font-weight: 600; margin-bottom: 8px;">Image</label>
+                    <?php if ($edit_type && !empty($edit_type['image_url'])): ?>
+                        <div style="margin-bottom:10px;">
+                            <img src="<?php echo htmlspecialchars($edit_type['image_url']); ?>" style="max-width:80px; border-radius:6px; border:2px solid #ddd;">
+                            <p style="color:#666; font-size:12px; margin:5px 0;">Image actuelle</p>
+                        </div>
+                    <?php endif; ?>
                     <div class="file-input-wrapper">
-                        <input type="file" name="type_image" id="type_image" required accept="image/*">
+                        <input type="file" name="type_image" id="type_image" <?php echo $edit_type ? '' : 'required'; ?> accept="image/*">
                         <div class="file-input-label">
                             <span class="icon">📁</span>
-                            <span id="file-label-text">Choisir une image</span>
+                            <span id="file-label-text"><?php echo $edit_type ? 'Changer l\'image (optionnel)' : 'Choisir une image'; ?></span>
                         </div>
                     </div>
                     <div id="file-name-display" class="file-name-display"></div>
@@ -219,7 +296,7 @@ require_once __DIR__ . '/includes/admin-layout.php';
                 <img id="preview-img" src="" style="max-width:150px; max-height:150px; border-radius:8px; border:2px solid #ddd;">
             </div>
         </div>
-        <button type="submit" class="submit-button">Ajouter le type</button>
+        <button type="submit" class="submit-button"><?php echo $edit_type ? 'Modifier le type' : 'Ajouter le type'; ?></button>
     </form>
 </div>
 
@@ -258,7 +335,11 @@ require_once __DIR__ . '/includes/admin-layout.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <form method="post" style="display:inline;"
+                            <a href="types.php?edit=<?php echo $type['id']; ?>"
+                               style="padding:6px 12px; background:#667eea; color:#fff; text-decoration:none; border-radius:6px; font-size:13px; font-weight:600; display:inline-block; margin-right:8px;">
+                                Modifier
+                            </a>
+                            <form method="post" style="display:inline; margin:0;"
                                   onsubmit="return confirm('Supprimer ce type ?');">
                                 <input type="hidden" name="action" value="delete_type">
                                 <input type="hidden" name="type_id" value="<?php echo $type['id']; ?>">

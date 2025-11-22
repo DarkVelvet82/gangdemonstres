@@ -147,7 +147,7 @@ require_once __DIR__ . '/includes/admin-layout.php';
                         <li>Des facteurs d'équilibrage selon la difficulté et le nombre de types</li>
                     </ul>
                     <p><strong>Les valeurs recommandées (⚡) sont affichées sous chaque champ.</strong> Vous pouvez les ajuster manuellement si besoin.</p>
-                    <button type="button" onclick="applyAllRecommendations()" class="submit-button" style="background:#007bff; margin-top:10px;">
+                    <button type="button" onclick="applyAllRecommendations()" class="submit-button btn-info" style="margin-top:10px;">
                         ⚡ Appliquer toutes les recommandations
                     </button>
                 </div>
@@ -326,7 +326,7 @@ require_once __DIR__ . '/includes/admin-layout.php';
                 <button type="submit" class="submit-button">Sauvegarder la configuration</button>
             </form>
 
-            <button type="button" onclick="testObjectiveGeneration()" class="submit-button" style="background:#28a745; margin-top:20px;">
+            <button type="button" onclick="testObjectiveGeneration()" class="submit-button btn-success" style="margin-top:20px;">
                 🧪 Tester la génération d'objectifs
             </button>
 

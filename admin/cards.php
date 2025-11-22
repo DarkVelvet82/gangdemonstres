@@ -847,7 +847,7 @@ require_once __DIR__ . '/includes/admin-layout.php';
                                     <?php if (!empty($ct['type_image'])): ?>
                                         <img src="<?php echo htmlspecialchars($ct['type_image']); ?>" alt="">
                                     <?php endif; ?>
-                                    <?php echo htmlspecialchars($ct['type_name']); ?>: <?php echo $ct['quantity']; ?>
+                                    <?php echo htmlspecialchars($ct['type_name'] ?? 'Type #' . $ct['type_id']); ?>: <?php echo $ct['quantity']; ?>
                                 </span>
                             <?php endif; ?>
                         <?php endforeach; ?>

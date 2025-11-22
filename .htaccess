@@ -7,7 +7,9 @@ RewriteBase /gang-de-monstres-standalone/
     Deny from all
 </FilesMatch>
 
-# API Routing
+# API Routing - Index route for WordPress-style actions
+RewriteRule ^api/?$ api/index.php [L,QSA]
+
 RewriteRule ^api/game/create$ api/game.php?action=create [L,QSA]
 RewriteRule ^api/game/join$ api/game.php?action=join [L,QSA]
 RewriteRule ^api/game/status$ api/game.php?action=status [L,QSA]

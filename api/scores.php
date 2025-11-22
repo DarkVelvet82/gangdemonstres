@@ -29,6 +29,10 @@ try {
             check_notifications();
             break;
 
+        case 'close_session':
+            close_session();
+            break;
+
         default:
             send_json_response(false, [], 'Action non reconnue');
     }
@@ -266,9 +270,71 @@ function check_notifications() {
         ];
     }
 
+    // Vérifier si la session a été fermée
+    if ($game['status'] === 'closed' && isset($game_config['session_closed_by'])) {
+        $notifications[] = [
+            'type' => 'session_closed',
+            'closed_by' => $game_config['session_closed_by'],
+            'timestamp' => $game_config['session_closed_at_timestamp'] ?? time()
+        ];
+    }
+
     send_json_response(true, [
         'notifications' => $notifications,
         'game_status' => $game['status'],
         'player_name' => $player['player_name']
+    ]);
+}
+
+/**
+ * Fermer la session (après fin de partie)
+ */
+function close_session() {
+    global $pdo;
+
+    $nonce = get_post_value('nonce');
+    if (!verify_nonce($nonce)) {
+        send_json_response(false, [], 'Nonce invalide');
+    }
+
+    $game_id = clean_int(get_post_value('game_id', 0));
+    $player_id = clean_int(get_post_value('player_id', 0));
+
+    if (!$game_id) {
+        send_json_response(false, [], 'ID de partie manquant');
+    }
+
+    // Vérifier que le joueur est le créateur
+    $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "players WHERE id = ? AND game_id = ? AND is_creator = 1");
+    $stmt->execute([$player_id, $game_id]);
+    $creator = $stmt->fetch();
+
+    if (!$creator) {
+        send_json_response(false, [], 'Seul le créateur peut fermer la session');
+    }
+
+    // Récupérer la partie
+    $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "games WHERE id = ?");
+    $stmt->execute([$game_id]);
+    $game = $stmt->fetch();
+
+    if (!$game) {
+        send_json_response(false, [], 'Partie introuvable');
+    }
+
+    // Mettre à jour la config avec les infos de fermeture
+    $game_config = json_decode($game['game_config'], true) ?: [];
+    $game_config['session_closed_by'] = $creator['player_name'];
+    $game_config['session_closed_at_timestamp'] = time();
+
+    // Marquer la partie comme fermée
+    $stmt = $pdo->prepare("UPDATE " . DB_PREFIX . "games
+        SET status = 'closed', game_config = ?
+        WHERE id = ?");
+    $stmt->execute([json_encode($game_config), $game_id]);
+
+    send_json_response(true, [
+        'message' => 'Session fermée',
+        'closed_by' => $creator['player_name']
     ]);
 }

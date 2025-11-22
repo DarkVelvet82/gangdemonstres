@@ -2,6 +2,35 @@
 window.ObjectifObjectives = (function($) {
     'use strict';
 
+    // Au chargement, récupérer les infos du joueur pour personnaliser le message
+    $(document).ready(function() {
+        loadPlayerInfo();
+    });
+
+    // Charger les infos du joueur au démarrage
+    function loadPlayerInfo() {
+        const playerId = getPlayerIdFromStorageOrURL();
+
+        if (!playerId) {
+            return;
+        }
+
+        $.ajax({
+            method: 'POST',
+            url: objectif_ajax.ajax_url,
+            data: {
+                action: 'objectif_get_player_info',
+                nonce: objectif_ajax.nonce,
+                player_id: playerId
+            },
+            success: function(response) {
+                if (response.success && response.data.player_name) {
+                    $('#welcome-message').text(`🎮 Bienvenue ${response.data.player_name} !`);
+                }
+            }
+        });
+    }
+
     // Génération de l'objectif du joueur
     $(document).on('click', '#objectif-generate-button', function() {
         generateObjective();

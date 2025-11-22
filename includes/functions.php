@@ -174,3 +174,91 @@ function get_game_config_name($pdo, $game_config_json) {
 
     return implode(' + ', $game_names);
 }
+
+/**
+ * Obtenir l'adresse IP du client
+ */
+function get_client_ip() {
+    $ip = '';
+
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        // Prendre la première IP si plusieurs
+        $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        $ip = trim($ips[0]);
+    } else {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
+
+    return filter_var($ip, FILTER_VALIDATE_IP) ?: '0.0.0.0';
+}
+
+/**
+ * Vérifier le rate limiting basé sur fichier
+ *
+ * @param string $action L'action à limiter (ex: 'register', 'login')
+ * @param string $identifier L'identifiant unique (IP, user_id, etc.)
+ * @param int $max_attempts Nombre max de tentatives autorisées
+ * @param int $time_window Fenêtre de temps en secondes
+ * @return bool True si autorisé, False si limite dépassée
+ */
+function check_rate_limit($action, $identifier, $max_attempts, $time_window) {
+    $rate_limit_dir = __DIR__ . '/../storage/rate_limits';
+
+    // Créer le dossier s'il n'existe pas
+    if (!is_dir($rate_limit_dir)) {
+        mkdir($rate_limit_dir, 0755, true);
+    }
+
+    // Nom de fichier sécurisé basé sur action + identifiant hashé
+    $filename = $rate_limit_dir . '/' . $action . '_' . md5($identifier) . '.json';
+
+    $now = time();
+    $attempts = [];
+
+    // Lire les tentatives existantes
+    if (file_exists($filename)) {
+        $data = json_decode(file_get_contents($filename), true);
+        if (is_array($data)) {
+            // Nettoyer les tentatives expirées
+            $attempts = array_filter($data, function($timestamp) use ($now, $time_window) {
+                return ($now - $timestamp) < $time_window;
+            });
+        }
+    }
+
+    // Vérifier si la limite est atteinte
+    if (count($attempts) >= $max_attempts) {
+        return false;
+    }
+
+    // Ajouter la nouvelle tentative
+    $attempts[] = $now;
+
+    // Sauvegarder
+    file_put_contents($filename, json_encode(array_values($attempts)));
+
+    return true;
+}
+
+/**
+ * Nettoyer les fichiers de rate limiting expirés (à appeler périodiquement)
+ */
+function cleanup_rate_limits() {
+    $rate_limit_dir = __DIR__ . '/../storage/rate_limits';
+
+    if (!is_dir($rate_limit_dir)) {
+        return;
+    }
+
+    $files = glob($rate_limit_dir . '/*.json');
+    $now = time();
+    $max_age = 7200; // 2 heures
+
+    foreach ($files as $file) {
+        if (filemtime($file) < ($now - $max_age)) {
+            @unlink($file);
+        }
+    }
+}

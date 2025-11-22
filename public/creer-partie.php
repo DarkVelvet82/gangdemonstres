@@ -84,45 +84,6 @@ $available_games = $stmt->fetchAll();
                     <?php endif; ?>
                 </div>
 
-                <!-- Sélection de la difficulté -->
-                <div class="form-group">
-                    <label for="objectif-difficulty" class="section-label">⚙️ Difficulté de la partie :</label>
-                    <div class="difficulty-selection">
-                        <label class="difficulty-option easy">
-                            <input type="radio" name="difficulty" value="easy" required>
-                            <div class="difficulty-info">
-                                <span class="difficulty-icon">🟢</span>
-                                <div>
-                                    <strong>Facile</strong>
-                                    <p>Objectifs simples, parties courtes</p>
-                                </div>
-                            </div>
-                        </label>
-
-                        <label class="difficulty-option normal">
-                            <input type="radio" name="difficulty" value="normal" checked required>
-                            <div class="difficulty-info">
-                                <span class="difficulty-icon">🟡</span>
-                                <div>
-                                    <strong>Normal</strong>
-                                    <p>Équilibre parfait entre défi et plaisir</p>
-                                </div>
-                            </div>
-                        </label>
-
-                        <label class="difficulty-option hard">
-                            <input type="radio" name="difficulty" value="hard" required>
-                            <div class="difficulty-info">
-                                <span class="difficulty-icon">🔴</span>
-                                <div>
-                                    <strong>Difficile</strong>
-                                    <p>Objectifs challenging, parties longues</p>
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
                 <!-- Configuration des joueurs -->
                 <div class="form-group">
                     <label for="objectif-player-count" class="section-label">👥 Nombre de joueurs :</label>
@@ -132,6 +93,17 @@ $available_games = $stmt->fetchAll();
                 <div class="form-group">
                     <label for="objectif-creator-name" class="section-label">🎯 Votre prénom :</label>
                     <input type="text" id="objectif-creator-name" placeholder="Entrez votre prénom" class="form-control" required>
+                </div>
+
+                <!-- Sélection rapide des joueurs fréquents (si connecté) -->
+                <div id="frequent-players-section" class="form-group" style="display:none;">
+                    <label class="section-label">⭐ Joueurs habituels :</label>
+                    <div id="frequent-players-list" class="frequent-players-grid">
+                        <!-- Rempli par JS -->
+                    </div>
+                    <p class="hint-text" style="font-size:13px; color:#666; margin-top:8px;">
+                        Cliquez pour ajouter/retirer un joueur
+                    </p>
                 </div>
 
                 <div id="other-players-names" class="form-group">
@@ -154,6 +126,54 @@ $available_games = $stmt->fetchAll();
     <script src="../assets/js/objectif-main.js"></script>
     <script src="../assets/js/objectif-qr.js"></script>
     <script src="../assets/js/objectif-status.js"></script>
+    <script src="../assets/js/objectif-user.js"></script>
     <script src="../assets/js/objectif-creation.js"></script>
+
+    <style>
+        .frequent-players-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .frequent-player-btn {
+            padding: 10px 18px;
+            border: 2px solid #667eea;
+            border-radius: 25px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .frequent-player-btn:hover {
+            background: #f0f0ff;
+        }
+        .frequent-player-btn.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        .user-login-prompt {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .user-login-prompt a {
+            color: #667eea;
+            font-weight: 600;
+        }
+        .logged-in-badge {
+            background: #d4edda;
+            color: #155724;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+    </style>
 </body>
 </html>

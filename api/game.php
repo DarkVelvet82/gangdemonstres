@@ -37,6 +37,10 @@ try {
             restart_game();
             break;
 
+        case 'cancel':
+            cancel_game();
+            break;
+
         default:
             send_json_response(false, [], 'Action non reconnue');
     }
@@ -63,6 +67,7 @@ function create_game() {
     $difficulty = clean_string(get_post_value('difficulty', 'normal'));
     $base_game = clean_int(get_post_value('base_game', 0));
     $extensions = array_map('intval', get_post_value('extensions', []));
+    $user_id = clean_int(get_post_value('user_id', 0)) ?: null;
 
     // Validations
     if ($player_count < 2 || $player_count > 10) {
@@ -108,14 +113,15 @@ function create_game() {
 
     // Créer la partie
     $stmt = $pdo->prepare("INSERT INTO " . DB_PREFIX . "games
-        (player_count, game_set_id, game_config, difficulty)
-        VALUES (?, ?, ?, ?)");
+        (player_count, game_set_id, game_config, difficulty, user_id)
+        VALUES (?, ?, ?, ?, ?)");
 
     $stmt->execute([
         $player_count,
         $base_game,
         json_encode($game_config),
-        $difficulty
+        $difficulty,
+        $user_id
     ]);
 
     $game_id = $pdo->lastInsertId();
@@ -375,5 +381,56 @@ function restart_game() {
         'message' => 'Partie redémarrée avec succès',
         'players_reset' => $updated,
         'restarted_by' => $creator_name
+    ]);
+}
+
+/**
+ * Annuler une partie (supprimer)
+ */
+function cancel_game() {
+    global $pdo;
+
+    $nonce = get_post_value('nonce');
+    if (!verify_nonce($nonce)) {
+        send_json_response(false, [], 'Nonce invalide');
+    }
+
+    $game_id = clean_int(get_post_value('game_id', 0));
+    $player_id = clean_int(get_post_value('player_id', 0));
+
+    if (!$game_id) {
+        send_json_response(false, [], 'ID de partie manquant');
+    }
+
+    // Vérifier que la partie existe
+    $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "games WHERE id = ?");
+    $stmt->execute([$game_id]);
+    $game = $stmt->fetch();
+
+    if (!$game) {
+        send_json_response(false, [], 'Partie introuvable');
+    }
+
+    // Vérifier que le joueur est bien le créateur
+    if ($player_id) {
+        $stmt = $pdo->prepare("SELECT is_creator FROM " . DB_PREFIX . "players WHERE id = ? AND game_id = ?");
+        $stmt->execute([$player_id, $game_id]);
+        $player = $stmt->fetch();
+
+        if (!$player || !$player['is_creator']) {
+            send_json_response(false, [], 'Seul le créateur peut annuler la partie');
+        }
+    }
+
+    // Supprimer les joueurs d'abord (contrainte de clé étrangère)
+    $stmt = $pdo->prepare("DELETE FROM " . DB_PREFIX . "players WHERE game_id = ?");
+    $stmt->execute([$game_id]);
+
+    // Supprimer la partie
+    $stmt = $pdo->prepare("DELETE FROM " . DB_PREFIX . "games WHERE id = ?");
+    $stmt->execute([$game_id]);
+
+    send_json_response(true, [
+        'message' => 'Partie annulée avec succès'
     ]);
 }

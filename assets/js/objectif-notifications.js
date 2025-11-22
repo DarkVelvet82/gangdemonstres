@@ -70,6 +70,8 @@ window.ObjectifNotifications = (function($) {
                 showGameEndedNotification(notification);
             } else if (notification.type === 'game_restarted') {
                 showGameRestartedNotification(notification);
+            } else if (notification.type === 'session_closed') {
+                showSessionClosedNotification(notification);
             }
         });
 
@@ -226,6 +228,90 @@ window.ObjectifNotifications = (function($) {
                 $(this).remove();
             });
         }, 15000);
+    }
+
+    // Afficher la notification de fermeture de session
+    function showSessionClosedNotification(notification) {
+        console.log('🚪 Notification fermeture de session:', notification);
+
+        // Supprimer les anciennes notifications
+        $('.game-notification').remove();
+
+        // Arrêter les vérifications de notifications
+        stopNotificationChecking();
+
+        const notificationHtml = `
+            <div class="game-notification session-closed" style="
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border: 2px solid #6c757d;
+                border-radius: 16px;
+                padding: 30px;
+                max-width: 400px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                z-index: 10000;
+                animation: fadeIn 0.5s ease-out;
+                text-align: center;
+            ">
+                <div style="margin-bottom: 20px;">
+                    <span style="font-size: 48px;">👋</span>
+                </div>
+
+                <h3 style="margin: 0 0 15px 0; color: #333; font-size: 22px;">
+                    Session terminée
+                </h3>
+
+                <div style="background: rgba(255,255,255,0.8); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 16px; color: #555;">
+                        <strong>${notification.closed_by}</strong> a mis fin à la session.
+                    </p>
+                    <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
+                        Merci d'avoir joué ! À bientôt 🎮
+                    </p>
+                </div>
+
+                <div>
+                    <a href="index.php" class="session-closed-btn" style="
+                        display: inline-block;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        border: none;
+                        padding: 14px 28px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 16px;
+                        font-weight: bold;
+                        text-decoration: none;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                    ">
+                        🏠 Retour à l'accueil
+                    </a>
+                </div>
+            </div>
+            <div class="notification-overlay" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 9999;
+            "></div>
+        `;
+
+        $('body').append(notificationHtml);
+
+        // Nettoyer le localStorage
+        localStorage.removeItem('objectif_player_id');
+        localStorage.removeItem('objectif_game_id');
+        localStorage.removeItem('objectif_is_creator');
+
+        // Masquer le contenu de la page
+        $('.objective-generator').hide();
+        $('#objectif-state').hide();
     }
 
     // Event handlers pour les notifications
