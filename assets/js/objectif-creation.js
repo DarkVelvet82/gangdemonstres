@@ -373,23 +373,14 @@ window.ObjectifCreation = (function($) {
     }
 
     function handleGameCreationSuccess(data) {
-        const resultDiv = $('#objectif-game-result');
-        resultDiv.empty();
-
         // Auto-connexion du créateur
         localStorage.setItem('objectif_player_id', data.creator_player_id);
         localStorage.setItem('objectif_game_id', data.game_id);
         localStorage.setItem('objectif_is_creator', '1');
+        localStorage.setItem('objectif_creator_name', data.creator_name);
 
-        // Générer l'HTML d'affichage
-        const html = generateCreationSuccessHTML(data);
-        resultDiv.html(html);
-
-        // Masquer le formulaire
-        $('#objectif-create-form').hide();
-
-        // Démarrer les tâches post-création
-        startPostCreationTasks(data);
+        // Rediriger vers la page partie.php
+        window.location.href = 'partie.php?id=' + data.game_id;
     }
 
     function generateCreationSuccessHTML(data) {
@@ -399,7 +390,7 @@ window.ObjectifCreation = (function($) {
                 <p class="success-message">✅ Partie créée avec succès !</p>
                 <p><strong>Vous êtes automatiquement connecté en tant que créateur.</strong></p>
                 <div class="game-config-summary">
-                    <p><strong>Configuration :</strong> ${data.game_config_name} | Difficulté : ${data.difficulty_display}</p>
+                    <p><strong>Configuration :</strong> ${data.game_config_name}</p>
                 </div>
                 <div class="cancel-game-section" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #ddd;">
                     <button type="button" id="cancel-game-btn" class="objectif-button" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;">

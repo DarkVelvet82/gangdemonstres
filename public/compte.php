@@ -252,16 +252,55 @@ require_once __DIR__ . '/../includes/functions.php';
             cursor: pointer;
             font-size: 14px;
         }
+
+        /* Bouton sticky mobile pour nouvelle partie */
+        .sticky-new-game {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .sticky-new-game {
+                display: block;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 15px 20px;
+                padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+                background: white;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+                z-index: 1000;
+            }
+
+            .sticky-new-game a {
+                display: block;
+                width: 100%;
+                padding: 16px;
+                background: linear-gradient(135deg, #003f53 0%, #003547 100%);
+                color: white;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 12px;
+                font-size: 18px;
+                font-weight: 600;
+            }
+
+            /* Cacher toute la section Actions sur mobile */
+            .dashboard-section.actions-section {
+                display: none;
+            }
+
+            /* Ajouter du padding en bas pour éviter que le contenu soit caché par le sticky */
+            .user-dashboard {
+                padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+            }
+        }
+
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <a href="index.php" class="back-arrow">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M244 400L100 256l144-144M120 256h292"/></svg>
-            </a>
-            <h1>Mon compte</h1>
-        </div>
+        <?php echo render_page_header('Mon compte', 'index.php'); ?>
 
         <!-- Formulaires Auth -->
         <div class="auth-container" id="auth-section">
@@ -336,6 +375,7 @@ require_once __DIR__ . '/../includes/functions.php';
             </div>
         </div>
 
+
         <!-- Dashboard utilisateur connecté -->
         <div class="user-dashboard" id="user-dashboard">
             <div class="user-header">
@@ -355,11 +395,18 @@ require_once __DIR__ . '/../includes/functions.php';
                 </div>
             </div>
 
-            <!-- Actions rapides -->
-            <div class="dashboard-section">
+            <!-- Actions rapides (visible uniquement sur desktop) -->
+            <div class="dashboard-section actions-section">
                 <h3>Actions</h3>
                 <a href="creer-partie.php" class="btn-primary" style="display:block; text-align:center; text-decoration:none; margin-bottom:10px;">
                     Créer une nouvelle partie
+                </a>
+            </div>
+
+            <!-- Scores -->
+            <div class="dashboard-section">
+                <a href="scores.php" class="btn-secondary" style="display:block; text-align:center; text-decoration:none;">
+                    🏆 Voir les scores
                 </a>
             </div>
 
@@ -377,7 +424,110 @@ require_once __DIR__ . '/../includes/functions.php';
         </div>
     </div>
 
+    <!-- Bouton sticky mobile -->
+    <div class="sticky-new-game" id="sticky-new-game" style="display:none;">
+        <a href="creer-partie.php" id="sticky-action-btn">Créer une nouvelle partie</a>
+    </div>
+
     <script src="../assets/js/app-config.js"></script>
     <script src="../assets/js/objectif-user.js"></script>
+    <script>
+        // Flag pour savoir si le check API est terminé
+        let gameCheckComplete = false;
+
+        $(document).ready(function() {
+            // Vérifier s'il y a une partie en cours
+            checkActiveGame();
+
+            // Afficher le sticky uniquement quand l'utilisateur est connecté ET que le check API est terminé
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'style' && gameCheckComplete) {
+                        updateStickyVisibility();
+                    }
+                });
+            });
+
+            const dashboard = document.getElementById('user-dashboard');
+            if (dashboard) {
+                observer.observe(dashboard, { attributes: true });
+            }
+        });
+
+        function checkActiveGame() {
+            const gameId = localStorage.getItem('objectif_game_id');
+            const playerId = localStorage.getItem('objectif_player_id');
+            const isCreator = localStorage.getItem('objectif_is_creator') === '1';
+
+            if (gameId && playerId) {
+                // Vérifier que la partie existe encore via l'API
+                $.ajax({
+                    method: 'POST',
+                    url: objectif_ajax.ajax_url + 'game.php?action=status',
+                    data: {
+                        nonce: objectif_ajax.nonce,
+                        game_id: gameId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // La partie existe, configurer le bouton "Reprendre"
+                            setupResumeButton(gameId, isCreator);
+                        } else {
+                            // La partie n'existe plus, nettoyer le localStorage
+                            clearGameData();
+                        }
+                        // Marquer le check comme terminé et afficher le sticky
+                        gameCheckComplete = true;
+                        updateStickyVisibility();
+                    },
+                    error: function() {
+                        // En cas d'erreur, on configure quand même le bouton reprendre
+                        setupResumeButton(gameId, isCreator);
+                        gameCheckComplete = true;
+                        updateStickyVisibility();
+                    }
+                });
+            } else {
+                // Pas de partie en cours, marquer comme terminé et afficher le sticky normal
+                gameCheckComplete = true;
+                updateStickyVisibility();
+            }
+        }
+
+        function setupResumeButton(gameId, isCreator) {
+            // Définir le lien selon si c'est le créateur ou un joueur
+            const resumeUrl = isCreator ? 'partie.php?id=' + gameId : 'objectif.php';
+
+            // Modifier le bouton sticky
+            const $stickyBtn = $('#sticky-action-btn');
+            $stickyBtn.attr('href', resumeUrl);
+            $stickyBtn.text('Reprendre la partie');
+            $stickyBtn.css('background', 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)');
+
+            // Modifier le bouton desktop dans la section Actions
+            const $desktopBtn = $('.actions-section .btn-primary');
+            if ($desktopBtn.length) {
+                $desktopBtn.attr('href', resumeUrl);
+                $desktopBtn.text('Reprendre la partie en cours');
+                $desktopBtn.css('background', 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)');
+            }
+        }
+
+        function updateStickyVisibility() {
+            const dashboard = document.getElementById('user-dashboard');
+            const sticky = document.getElementById('sticky-new-game');
+            if (dashboard && sticky) {
+                const isVisible = dashboard.style.display === 'block';
+                sticky.style.display = isVisible ? '' : 'none';
+            }
+        }
+
+        function clearGameData() {
+            localStorage.removeItem('objectif_game_id');
+            localStorage.removeItem('objectif_player_id');
+            localStorage.removeItem('objectif_is_creator');
+            localStorage.removeItem('objectif_creator_name');
+        }
+    </script>
 </body>
 </html>

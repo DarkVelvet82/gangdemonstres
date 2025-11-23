@@ -41,6 +41,10 @@ try {
             cancel_game();
             break;
 
+        case 'full_status':
+            get_full_game_status();
+            break;
+
         default:
             send_json_response(false, [], 'Action non reconnue');
     }
@@ -114,17 +118,21 @@ function create_game() {
     }
     $game_config_name = implode(' + ', $game_names);
 
+    // Tirage des objectifs spéciaux (1/12 de chance par partie)
+    $special_objective_data = draw_special_objective_for_game($pdo, $player_count);
+
     // Créer la partie
     $stmt = $pdo->prepare("INSERT INTO " . DB_PREFIX . "games
-        (player_count, game_set_id, game_config, difficulty, user_id)
-        VALUES (?, ?, ?, ?, ?)");
+        (player_count, game_set_id, game_config, difficulty, user_id, special_objective_data)
+        VALUES (?, ?, ?, ?, ?, ?)");
 
     $stmt->execute([
         $player_count,
         $base_game,
         json_encode($game_config),
         $difficulty,
-        $user_id
+        $user_id,
+        $special_objective_data ? json_encode($special_objective_data) : null
     ]);
 
     $game_id = $pdo->lastInsertId();
@@ -370,20 +378,129 @@ function restart_game() {
     $stmt->execute([$game_id]);
     $updated = $stmt->rowCount();
 
+    // Nouveau tirage des objectifs spéciaux pour la nouvelle partie
+    $special_objective_data = draw_special_objective_for_game($pdo, (int)$game['player_count']);
+
     // Marquer la partie comme active
     $game_config = json_decode($game['game_config'], true) ?: [];
     $game_config['restarted_by'] = $creator_name;
     $game_config['restarted_at_timestamp'] = time();
 
     $stmt = $pdo->prepare("UPDATE " . DB_PREFIX . "games
-        SET status = 'active', ended_at = NULL, game_config = ?
+        SET status = 'active', ended_at = NULL, game_config = ?, special_objective_data = ?
         WHERE id = ?");
-    $stmt->execute([json_encode($game_config), $game_id]);
+    $stmt->execute([
+        json_encode($game_config),
+        $special_objective_data ? json_encode($special_objective_data) : null,
+        $game_id
+    ]);
 
     send_json_response(true, [
         'message' => 'Partie redémarrée avec succès',
         'players_reset' => $updated,
         'restarted_by' => $creator_name
+    ]);
+}
+
+/**
+ * Récupérer le statut complet de la partie (pour la page partie.php)
+ */
+function get_full_game_status() {
+    global $pdo;
+
+    $nonce = get_post_value('nonce');
+    if (!verify_nonce($nonce)) {
+        send_json_response(false, [], 'Nonce invalide');
+    }
+
+    $game_id = clean_int(get_post_value('game_id', 0));
+    $player_id = clean_int(get_post_value('player_id', 0));
+
+    if (!$game_id) {
+        send_json_response(false, [], 'ID de partie manquant');
+    }
+
+    // Vérifier la partie
+    $stmt = $pdo->prepare("SELECT g.*, gs.name as game_set_name
+        FROM " . DB_PREFIX . "games g
+        LEFT JOIN " . DB_PREFIX . "game_sets gs ON g.game_set_id = gs.id
+        WHERE g.id = ?");
+    $stmt->execute([$game_id]);
+    $game = $stmt->fetch();
+
+    if (!$game) {
+        send_json_response(false, [], 'Partie introuvable');
+    }
+
+    // Vérifier que le joueur fait partie de cette partie
+    if ($player_id) {
+        $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "players WHERE id = ? AND game_id = ?");
+        $stmt->execute([$player_id, $game_id]);
+        $requesting_player = $stmt->fetch();
+
+        if (!$requesting_player) {
+            send_json_response(false, [], 'Vous n\'êtes pas autorisé à voir cette partie');
+        }
+
+        $is_creator = (bool)$requesting_player['is_creator'];
+    } else {
+        $is_creator = false;
+    }
+
+    // Récupérer le nom de la configuration
+    $game_config = json_decode($game['game_config'], true) ?: [];
+    $game_set_ids = array_merge(
+        [$game_config['base_game'] ?? $game['game_set_id']],
+        $game_config['extensions'] ?? []
+    );
+
+    $placeholders = implode(',', array_fill(0, count($game_set_ids), '?'));
+    $stmt = $pdo->prepare("SELECT id, name FROM " . DB_PREFIX . "game_sets WHERE id IN ($placeholders)");
+    $stmt->execute($game_set_ids);
+    $games_rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    $game_names = [];
+    foreach ($game_set_ids as $id) {
+        if (isset($games_rows[$id])) {
+            $game_names[] = $games_rows[$id];
+        }
+    }
+    $game_config_name = implode(' + ', $game_names);
+
+    // Récupérer tous les joueurs (sauf le créateur)
+    $stmt = $pdo->prepare("SELECT id, player_name, player_code, is_creator, used
+        FROM " . DB_PREFIX . "players
+        WHERE game_id = ? AND is_creator = 0
+        ORDER BY id ASC");
+    $stmt->execute([$game_id]);
+    $other_players = $stmt->fetchAll();
+
+    // Récupérer le créateur
+    $stmt = $pdo->prepare("SELECT player_name FROM " . DB_PREFIX . "players
+        WHERE game_id = ? AND is_creator = 1");
+    $stmt->execute([$game_id]);
+    $creator_name = $stmt->fetchColumn();
+
+    $players_data = [];
+    foreach ($other_players as $player) {
+        $players_data[] = [
+            'id' => intval($player['id']),
+            'name' => $player['player_name'],
+            'code' => $player['player_code'],
+            'has_joined' => (bool)$player['used']
+        ];
+    }
+
+    $join_page_url = get_app_url('public/rejoindre.php');
+
+    send_json_response(true, [
+        'game_id' => intval($game_id),
+        'creator_name' => $creator_name,
+        'game_config_name' => $game_config_name,
+        'players' => $players_data,
+        'join_page_url' => $join_page_url,
+        'is_creator' => $is_creator,
+        'game_status' => $game['status']
     ]);
 }
 

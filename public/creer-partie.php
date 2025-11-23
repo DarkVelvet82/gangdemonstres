@@ -27,13 +27,8 @@ $available_games = $stmt->fetchAll();
 <body>
     <div class="container">
         <div class="objectif-create-game">
+            <?php echo render_page_header('Créer une nouvelle partie', 'index.php'); ?>
             <form id="objectif-create-form" class="modern-form">
-                <div class="header">
-                    <a href="index.php" class="back-arrow">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M244 400L100 256l144-144M120 256h292"/></svg>
-                    </a>
-                    <h1>Créer une nouvelle partie</h1>
-                </div>
 
                 <!-- Sélection du jeu et extensions -->
                 <div class="form-group">
@@ -106,6 +101,13 @@ $available_games = $stmt->fetchAll();
 
             <div id="objectif-game-result" class="result-container"></div>
         </div>
+    </div>
+
+    <!-- Bouton sticky mobile pour créer la partie -->
+    <div class="btn-create-wrapper">
+        <button type="submit" form="objectif-create-form" class="objectif-button objectif-primary btn-create">
+            Créer la partie
+        </button>
     </div>
 
     <script src="../assets/js/app-config.js"></script>

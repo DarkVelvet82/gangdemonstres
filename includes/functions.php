@@ -262,3 +262,101 @@ function cleanup_rate_limits() {
         }
     }
 }
+
+/**
+ * Effectuer le tirage des objectifs spéciaux à la création/redémarrage d'une partie
+ *
+ * @param PDO $pdo
+ * @param int $player_count Nombre de joueurs dans la partie
+ * @return array|null Données du tirage {special_id, winner_order} ou null si pas de gagnant
+ */
+function draw_special_objective_for_game($pdo, $player_count) {
+    // Récupérer les objectifs spéciaux actifs
+    $stmt = $pdo->query("SELECT * FROM " . DB_PREFIX . "special_objectives WHERE is_active = 1 ORDER BY display_order");
+    $special_objectives = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($special_objectives)) {
+        return null;
+    }
+
+    // Pour chaque objectif spécial, faire le tirage
+    foreach ($special_objectives as $special) {
+        $probability = (float)$special['probability'];
+        $random = mt_rand() / mt_getrandmax();
+
+        if ($random <= $probability) {
+            // Tirage gagnant ! Choisir aléatoirement quel joueur aura l'objectif
+            $winner_order = mt_rand(1, $player_count);
+
+            return [
+                'special_id' => (int)$special['id'],
+                'winner_order' => $winner_order
+            ];
+        }
+    }
+
+    // Aucun objectif spécial n'a été tiré
+    return null;
+}
+
+/**
+ * Vérifier si un joueur doit recevoir un objectif spécial
+ *
+ * @param PDO $pdo
+ * @param array $game La partie (avec special_objective_data)
+ * @param int $current_player_order Numéro d'ordre du joueur (1-based, basé sur le nombre d'objectifs déjà générés + 1)
+ * @return array|null Retourne l'objectif spécial ou null
+ */
+function try_assign_special_objective($pdo, $game, $current_player_order) {
+    // Vérifier si un tirage a été fait pour cette partie
+    $special_data = null;
+    if (!empty($game['special_objective_data'])) {
+        $special_data = json_decode($game['special_objective_data'], true);
+    }
+
+    if (empty($special_data) || !isset($special_data['winner_order']) || $special_data['winner_order'] === 0) {
+        // Pas de tirage gagnant pour cette partie
+        return null;
+    }
+
+    // Vérifier si c'est le tour du joueur gagnant
+    if ($current_player_order !== (int)$special_data['winner_order']) {
+        return null;
+    }
+
+    // C'est le joueur gagnant ! Récupérer l'objectif spécial
+    $special_id = (int)$special_data['special_id'];
+    $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "special_objectives WHERE id = ? AND is_active = 1");
+    $stmt->execute([$special_id]);
+    $special = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$special) {
+        return null;
+    }
+
+    // Construire l'objectif (les requirements sont vides car l'image contient les infos)
+    $objective = [];
+    $objective['_special_id'] = $special_id;
+    $objective['_special_name'] = $special['name'];
+
+    // Récupérer l'image correspondant au nombre de joueurs
+    $player_count = (int)$game['player_count'];
+    $stmt = $pdo->prepare("SELECT image_url FROM " . DB_PREFIX . "special_objective_images
+        WHERE special_objective_id = ? AND player_count = ?");
+    $stmt->execute([$special_id, $player_count]);
+    $image_url = $stmt->fetchColumn();
+
+    // Si pas d'image pour ce nombre de joueurs, prendre la première disponible
+    if (!$image_url) {
+        $stmt = $pdo->prepare("SELECT image_url FROM " . DB_PREFIX . "special_objective_images
+            WHERE special_objective_id = ? ORDER BY player_count LIMIT 1");
+        $stmt->execute([$special_id]);
+        $image_url = $stmt->fetchColumn();
+    }
+
+    return [
+        'objective' => $objective,
+        'name' => $special['name'],
+        'image' => $image_url ?: null
+    ];
+}

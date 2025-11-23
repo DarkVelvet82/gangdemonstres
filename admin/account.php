@@ -15,8 +15,8 @@ if (!isset($_SESSION['admin_logged_in']) || !$_SESSION['admin_logged_in']) {
 $message = '';
 $error = '';
 
-// Fetch current admin
-$stmt = $pdo->prepare('SELECT * FROM ' . DB_PREFIX . 'users WHERE id = ? AND is_admin = 1');
+// Fetch current admin (table wp_users avec structure WordPress)
+$stmt = $pdo->prepare('SELECT * FROM wp_users WHERE ID = ?');
 $stmt->execute([$_SESSION['admin_user_id']]);
 $currentUser = $stmt->fetch();
 
@@ -36,21 +36,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
 
         if (empty($current_password)) {
             $error = 'Mot de passe actuel requis';
-        } elseif (!$currentUser || !password_verify($current_password, $currentUser['password'])) {
+        } elseif (!$currentUser || !password_verify($current_password, $currentUser['user_pass'])) {
             $error = 'Mot de passe actuel incorrect';
         } else {
             // Build update query dynamically
             $updates = [];
             $params = [];
 
-            if ($new_username !== '' && $new_username !== $currentUser['username']) {
+            if ($new_username !== '' && $new_username !== $currentUser['user_login']) {
                 // Ensure uniqueness
-                $check = $pdo->prepare('SELECT COUNT(*) FROM ' . DB_PREFIX . 'users WHERE username = ? AND id <> ?');
-                $check->execute([$new_username, $currentUser['id']]);
+                $check = $pdo->prepare('SELECT COUNT(*) FROM wp_users WHERE user_login = ? AND ID <> ?');
+                $check->execute([$new_username, $currentUser['ID']]);
                 if ($check->fetchColumn() > 0) {
                     $error = "Nom d'utilisateur déjà pris";
                 } else {
-                    $updates[] = 'username = ?';
+                    $updates[] = 'user_login = ?';
                     $params[] = $new_username;
                 }
             }
@@ -62,23 +62,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
                     $error = 'La confirmation ne correspond pas';
                 } else {
                     $hash = password_hash($new_password, PASSWORD_BCRYPT);
-                    $updates[] = 'password = ?';
+                    $updates[] = 'user_pass = ?';
                     $params[] = $hash;
                 }
             }
 
             if (empty($error) && !empty($updates)) {
-                $params[] = $currentUser['id'];
-                $sql = 'UPDATE ' . DB_PREFIX . 'users SET ' . implode(', ', $updates) . ' WHERE id = ?';
+                $params[] = $currentUser['ID'];
+                $sql = 'UPDATE wp_users SET ' . implode(', ', $updates) . ' WHERE ID = ?';
                 $upd = $pdo->prepare($sql);
                 $upd->execute($params);
 
-                if ($new_username !== '' && $new_username !== $currentUser['username']) {
+                if ($new_username !== '' && $new_username !== $currentUser['user_login']) {
                     $_SESSION['admin_username'] = $new_username;
-                    $currentUser['username'] = $new_username;
+                    $currentUser['user_login'] = $new_username;
                 }
                 if (!empty($hash)) {
-                    $currentUser['password'] = $hash;
+                    $currentUser['user_pass'] = $hash;
                 }
 
                 $message = 'Informations mises à jour avec succès';
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
 
                 <div class="form-group">
                     <label for="new_username">Nouvel identifiant (optionnel)</label>
-                    <input type="text" id="new_username" name="new_username" value="<?php echo htmlspecialchars($currentUser['username'] ?? ''); ?>">
+                    <input type="text" id="new_username" name="new_username" value="<?php echo htmlspecialchars($currentUser['user_login'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">

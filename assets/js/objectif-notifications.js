@@ -75,6 +75,9 @@ window.ObjectifNotifications = (function($) {
             return;
         }
 
+        // Le créateur ne reçoit pas les notifications (il a déjà ses modals)
+        const isCreator = localStorage.getItem('objectif_is_creator') === '1';
+
         data.notifications.forEach(notification => {
             // Éviter de montrer plusieurs fois la même notification
             if (notification.timestamp <= lastNotificationCheck) {
@@ -82,11 +85,20 @@ window.ObjectifNotifications = (function($) {
             }
 
             if (notification.type === 'game_ended') {
-                showGameEndedNotification(notification);
+                // Le créateur a déjà la modal post-game, pas besoin de notification
+                if (!isCreator) {
+                    showGameEndedNotification(notification);
+                }
             } else if (notification.type === 'game_restarted') {
-                showGameRestartedNotification(notification);
+                // Le créateur a lancé le restart lui-même, pas besoin de notification
+                if (!isCreator) {
+                    showGameRestartedNotification(notification);
+                }
             } else if (notification.type === 'session_closed') {
-                showSessionClosedNotification(notification);
+                // Le créateur a fermé la session lui-même, pas besoin de notification
+                if (!isCreator) {
+                    showSessionClosedNotification(notification);
+                }
             }
         });
 
@@ -299,8 +311,27 @@ window.ObjectifNotifications = (function($) {
         setTimeout(() => {
             $('.game-notification').fadeOut(300, function() {
                 $(this).remove();
+                // Afficher le sticky bouton pour générer l'objectif
+                showGenerateSticky();
             });
         }, 15000);
+    }
+
+    // Afficher le sticky bouton pour générer l'objectif
+    function showGenerateSticky() {
+        // Ne pas afficher si le message d'attente est présent (partie pas encore relancée)
+        if ($('.waiting-message').length > 0) {
+            return;
+        }
+
+        // Réafficher la section de génération si elle était cachée
+        $('.objective-generator').show();
+
+        // Sur objectif.php, le sticky s'appelle #sticky-objective
+        const $stickyObjective = $('#sticky-objective');
+        if ($stickyObjective.length) {
+            $stickyObjective.show();
+        }
     }
 
     // Afficher la notification de fermeture de session
@@ -314,6 +345,15 @@ window.ObjectifNotifications = (function($) {
         stopNotificationChecking();
 
         const notificationHtml = `
+            <div class="notification-overlay" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.7);
+                z-index: 9999;
+            "></div>
             <div class="game-notification session-closed" style="
                 position: fixed;
                 top: 50%;
@@ -323,10 +363,11 @@ window.ObjectifNotifications = (function($) {
                 border: 2px solid #6c757d;
                 border-radius: 16px;
                 padding: 30px;
+                width: calc(100% - 40px);
                 max-width: 400px;
+                box-sizing: border-box;
                 box-shadow: 0 8px 32px rgba(0,0,0,0.3);
                 z-index: 10000;
-                animation: fadeIn 0.5s ease-out;
                 text-align: center;
             ">
                 <div style="margin-bottom: 20px;">
@@ -364,15 +405,6 @@ window.ObjectifNotifications = (function($) {
                     </a>
                 </div>
             </div>
-            <div class="notification-overlay" style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 9999;
-            "></div>
         `;
 
         $('body').append(notificationHtml);
@@ -426,6 +458,8 @@ window.ObjectifNotifications = (function($) {
     $(document).on('click', '#close-restart-notification', function() {
         $('.game-notification').fadeOut(300, function() {
             $(this).remove();
+            // Afficher le sticky bouton pour générer l'objectif
+            showGenerateSticky();
         });
     });
 

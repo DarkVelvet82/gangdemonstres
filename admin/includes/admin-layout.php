@@ -361,6 +361,9 @@ $_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
             <a href="difficulty.php" class="nav-item <?php echo $current_page === 'difficulty.php' ? 'active' : ''; ?>">
                 <span class="icon">⚡</span> Génération objectif
             </a>
+            <a href="special-objectives.php" class="nav-item <?php echo $current_page === 'special-objectives.php' ? 'active' : ''; ?>">
+                <span class="icon">🎯</span> Objectifs spéciaux
+            </a>
             <a href="analyze-distribution.php" class="nav-item <?php echo $current_page === 'analyze-distribution.php' ? 'active' : ''; ?>">
                 <span class="icon">📈</span> Analyse Distribution
             </a>

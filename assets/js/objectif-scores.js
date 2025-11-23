@@ -383,7 +383,7 @@ window.ObjectifScores = (function($) {
             playersHtml += `
                 <label class="player-checkbox">
                     <input type="radio" name="winner" value="${player.id}" data-player-name="${player.player_name}">
-                    <span>🎮 ${player.player_name}</span>
+                    <span>${player.player_name}</span>
                 </label>
             `;
         });
@@ -404,11 +404,11 @@ window.ObjectifScores = (function($) {
                 <div id="players-checkboxes">
                     <label class="player-checkbox">
                         <input type="radio" name="winner" value="1" data-player-name="Joueur 1">
-                        <span>🎮 Joueur 1</span>
+                        <span>Joueur 1</span>
                     </label>
                     <label class="player-checkbox">
                         <input type="radio" name="winner" value="2" data-player-name="Joueur 2">
-                        <span>🎮 Joueur 2</span>
+                        <span>Joueur 2</span>
                     </label>
                 </div>
             </div>
@@ -452,14 +452,17 @@ window.ObjectifScores = (function($) {
                     gameEnded = true;
                     
                     $('#end-game-modal').fadeOut(300);
-                    
+
                     // Afficher la modal post-game avec le nom du gagnant
                     $('#winner-announcement').html(`
                         <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #28a745;">
                             <strong>🏆 Gagnant : ${winnerName}</strong>
                         </div>
                     `);
-                    
+
+                    // Désactiver les boutons pendant 10 secondes pour laisser les joueurs voir leur notification
+                    disablePostGameButtons();
+
                     $('#post-game-modal').fadeIn(300);
                 } else {
                     alert('Erreur lors de la sauvegarde des scores : ' + response.data);
@@ -469,6 +472,42 @@ window.ObjectifScores = (function($) {
                 alert('Erreur de connexion lors de la sauvegarde des scores.');
             }
         });
+    }
+
+    // Désactiver les boutons "Nouvelle partie" et "Quitter" pendant 10 secondes
+    // pour laisser aux joueurs le temps de voir leur notification de fin de partie
+    function disablePostGameButtons() {
+        const $newGameBtn = $('#new-game-from-modal');
+        const $quitBtn = $('#quit-session-from-modal');
+        const waitTime = 10; // secondes
+
+        // Désactiver les boutons
+        $newGameBtn.prop('disabled', true);
+        $quitBtn.prop('disabled', true);
+
+        // Ajouter un style visuel pour montrer qu'ils sont désactivés
+        $newGameBtn.css('opacity', '0.5');
+        $quitBtn.css('opacity', '0.5');
+
+        // Afficher un message d'attente
+        const $waitMessage = $('<p id="wait-message" style="color: #666; font-size: 14px; margin-bottom: 15px; text-align: center;"></p>');
+        $('#winner-announcement').after($waitMessage);
+
+        let remaining = waitTime;
+        $waitMessage.text(`⏳ Patientez ${remaining}s que les joueurs voient leur résultat...`);
+
+        const countdown = setInterval(() => {
+            remaining--;
+            if (remaining > 0) {
+                $waitMessage.text(`⏳ Patientez ${remaining}s que les joueurs voient leur résultat...`);
+            } else {
+                clearInterval(countdown);
+                // Réactiver les boutons
+                $newGameBtn.prop('disabled', false).css('opacity', '1');
+                $quitBtn.prop('disabled', false).css('opacity', '1');
+                $waitMessage.fadeOut(300, function() { $(this).remove(); });
+            }
+        }, 1000);
     }
 
     function updateManagementButtonsAfterGameEnd() {

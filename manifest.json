@@ -1,0 +1,23 @@
+{
+    "name": "Gang de Monstres",
+    "short_name": "Gang Monstres",
+    "description": "Générateur d'objectifs multijoueur pour Gang de Monstres",
+    "start_url": "./public/index.php",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#003f53",
+    "theme_color": "#003f53",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "./assets/images/icon-512.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg"
+        },
+        {
+            "src": "./assets/images/icon-512.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg"
+        }
+    ]
+}

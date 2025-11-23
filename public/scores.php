@@ -102,16 +102,119 @@ require_once __DIR__ . '/../includes/front-header.php';
             padding: 40px;
             color: #666;
         }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .scores-container {
+                padding: 20px;
+                border-radius: 0;
+                box-shadow: none;
+                border: none;
+            }
+
+            .filter-section {
+                flex-wrap: wrap;
+            }
+
+            .filter-section input {
+                width: 100%;
+                flex: none;
+            }
+
+            .filter-section button {
+                flex: 1;
+            }
+
+            /* Cacher le tableau classique sur mobile */
+            .scores-table table {
+                display: none;
+            }
+
+            /* Afficher les cards sur mobile */
+            .scores-cards {
+                display: block;
+            }
+
+            .score-card {
+                background: #f7f8fa;
+                border-radius: 12px;
+                padding: 15px;
+                margin-bottom: 12px;
+                border-left: 4px solid #003f53;
+            }
+
+            .score-card.rank-1 {
+                border-left-color: #FFD700;
+                background: linear-gradient(135deg, #fffdf0 0%, #fff9e6 100%);
+            }
+
+            .score-card.rank-2 {
+                border-left-color: #C0C0C0;
+                background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+            }
+
+            .score-card.rank-3 {
+                border-left-color: #CD7F32;
+                background: linear-gradient(135deg, #fdf6f0 0%, #f9efe6 100%);
+            }
+
+            .score-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+
+            .score-card-rank {
+                font-size: 1.5em;
+                font-weight: bold;
+                color: #003f53;
+            }
+
+            .score-card.rank-1 .score-card-rank { color: #FFD700; }
+            .score-card.rank-2 .score-card-rank { color: #C0C0C0; }
+            .score-card.rank-3 .score-card-rank { color: #CD7F32; }
+
+            .score-card-name {
+                font-size: 1.2em;
+                font-weight: 600;
+                color: #333;
+            }
+
+            .score-card-stats {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .score-card-stat {
+                font-size: 0.9em;
+            }
+
+            .score-card-stat-label {
+                color: #666;
+            }
+
+            .score-card-stat-value {
+                font-weight: 600;
+                color: #333;
+            }
+
+            .score-card-stat-value.win-rate {
+                color: #28a745;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .scores-cards {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="scores-container">
-        <div class="header">
-            <a href="index.php" class="back-arrow">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M244 400L100 256l144-144M120 256h292"/></svg>
-            </a>
-            <h1>Tableau des scores</h1>
-        </div>
+        <?php echo render_page_header('Tableau des scores', 'compte.php'); ?>
 
         <div class="filter-section">
             <input type="text" id="player-filter" placeholder="Rechercher un joueur...">
@@ -119,6 +222,7 @@ require_once __DIR__ . '/../includes/front-header.php';
             <button id="reset-btn" style="background: #6c757d;">Réinitialiser</button>
         </div>
 
+        <!-- Tableau desktop -->
         <div class="scores-table">
             <table>
                 <thead>
@@ -138,6 +242,11 @@ require_once __DIR__ . '/../includes/front-header.php';
                 </tbody>
             </table>
         </div>
+
+        <!-- Cards mobile -->
+        <div class="scores-cards" id="scores-cards">
+            <div class="loading">Chargement des scores...</div>
+        </div>
     </div>
 
     <script src="../assets/js/app-config.js"></script>
@@ -145,6 +254,7 @@ require_once __DIR__ . '/../includes/front-header.php';
         jQuery(document).ready(function($) {
             function loadScores(playerFilter = '') {
                 $('#scores-tbody').html('<tr><td colspan="6" class="loading">Chargement...</td></tr>');
+                $('#scores-cards').html('<div class="loading">Chargement...</div>');
 
                 $.ajax({
                     url: objectif_ajax.ajax_url + 'scores.php?action=get',
@@ -159,25 +269,30 @@ require_once __DIR__ . '/../includes/front-header.php';
                             displayScores(response.data.scores);
                         } else {
                             $('#scores-tbody').html('<tr><td colspan="6" class="loading">Aucun score trouvé</td></tr>');
+                            $('#scores-cards').html('<div class="loading">Aucun score trouvé</div>');
                         }
                     },
                     error: function() {
                         $('#scores-tbody').html('<tr><td colspan="6" class="loading">Erreur de chargement</td></tr>');
+                        $('#scores-cards').html('<div class="loading">Erreur de chargement</div>');
                     }
                 });
             }
 
             function displayScores(scores) {
-                let html = '';
+                let tableHtml = '';
+                let cardsHtml = '';
 
                 if (scores.length === 0) {
-                    html = '<tr><td colspan="6" class="loading">Aucun score enregistré</td></tr>';
+                    tableHtml = '<tr><td colspan="6" class="loading">Aucun score enregistré</td></tr>';
+                    cardsHtml = '<div class="loading">Aucun score enregistré</div>';
                 } else {
                     scores.forEach((score, index) => {
                         const rank = index + 1;
                         const rankClass = rank <= 3 ? `rank-${rank}` : '';
 
-                        html += `
+                        // Version tableau (desktop)
+                        tableHtml += `
                             <tr>
                                 <td class="rank ${rankClass}">${rank}</td>
                                 <td><strong>${escapeHtml(score.player_name)}</strong></td>
@@ -187,10 +302,39 @@ require_once __DIR__ . '/../includes/front-header.php';
                                 <td>${formatDate(score.last_game)}</td>
                             </tr>
                         `;
+
+                        // Version cards (mobile)
+                        cardsHtml += `
+                            <div class="score-card ${rankClass}">
+                                <div class="score-card-header">
+                                    <span class="score-card-rank">#${rank}</span>
+                                    <span class="score-card-name">${escapeHtml(score.player_name)}</span>
+                                </div>
+                                <div class="score-card-stats">
+                                    <div class="score-card-stat">
+                                        <span class="score-card-stat-label">Parties</span>
+                                        <span class="score-card-stat-value">${score.total_games}</span>
+                                    </div>
+                                    <div class="score-card-stat">
+                                        <span class="score-card-stat-label">Victoires</span>
+                                        <span class="score-card-stat-value">${score.total_wins}</span>
+                                    </div>
+                                    <div class="score-card-stat">
+                                        <span class="score-card-stat-label">Taux</span>
+                                        <span class="score-card-stat-value win-rate">${score.win_percentage}%</span>
+                                    </div>
+                                    <div class="score-card-stat">
+                                        <span class="score-card-stat-label">Dernière</span>
+                                        <span class="score-card-stat-value">${formatDateShort(score.last_game)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
                     });
                 }
 
-                $('#scores-tbody').html(html);
+                $('#scores-tbody').html(tableHtml);
+                $('#scores-cards').html(cardsHtml);
             }
 
             function escapeHtml(text) {
@@ -207,6 +351,14 @@ require_once __DIR__ . '/../includes/front-header.php';
                     year: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
+                });
+            }
+
+            function formatDateShort(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit'
                 });
             }
 

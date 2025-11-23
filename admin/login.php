@@ -16,16 +16,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($username) && !empty($password)) {
         try {
             // Vérifier que la table existe, sinon afficher un message clair au lieu d'une 500
-            $pdo->query("SELECT 1 FROM " . DB_PREFIX . "users LIMIT 1");
+            $pdo->query("SELECT 1 FROM wp_users LIMIT 1");
 
-            $stmt = $pdo->prepare("SELECT * FROM " . DB_PREFIX . "users WHERE username = ? AND is_admin = 1");
+            // Structure WordPress : user_login, user_pass (pas de is_admin, on accepte tous les users WP)
+            $stmt = $pdo->prepare("SELECT * FROM wp_users WHERE user_login = ?");
             $stmt->execute([$username]);
             $user = $stmt->fetch();
 
-            if ($user && password_verify($password, $user['password'])) {
+            if ($user && password_verify($password, $user['user_pass'])) {
                 $_SESSION['admin_logged_in'] = true;
-                $_SESSION['admin_user_id'] = $user['id'];
-                $_SESSION['admin_username'] = $user['username'];
+                $_SESSION['admin_user_id'] = $user['ID'];
+                $_SESSION['admin_username'] = $user['user_login'];
 
                 header('Location: index.php');
                 exit;

@@ -35,7 +35,9 @@ function install_database() {
             game_set_id BIGINT UNSIGNED NULL,
             game_config TEXT NULL,
             difficulty VARCHAR(20) DEFAULT 'normal',
+            user_id BIGINT UNSIGNED NULL,
             status VARCHAR(20) DEFAULT 'active',
+            special_objective_data JSON NULL COMMENT 'Tirage objectif spécial: {special_id: X, winner_order: Y}',
             INDEX idx_status (status),
             INDEX idx_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
@@ -101,6 +103,30 @@ function install_database() {
             email VARCHAR(255) NULL,
             is_admin TINYINT(1) DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Table des objectifs spéciaux (ex: Le Parrain)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS " . DB_PREFIX . "special_objectives (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            description TEXT NULL,
+            requirements JSON NOT NULL COMMENT 'Format: {\"type_id\": quantity, ...}',
+            probability DECIMAL(5,4) DEFAULT 0.0833 COMMENT 'Probabilité de tirage (ex: 0.0833 = 1/12)',
+            max_per_game INT DEFAULT 1 COMMENT 'Nombre max de joueurs pouvant avoir cet objectif par partie',
+            is_active TINYINT(1) DEFAULT 1,
+            display_order INT DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Table des images d'objectifs spéciaux par nombre de joueurs
+        $pdo->exec("CREATE TABLE IF NOT EXISTS " . DB_PREFIX . "special_objective_images (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            special_objective_id BIGINT UNSIGNED NOT NULL,
+            player_count INT NOT NULL COMMENT 'Nombre de joueurs (2, 3, 4, 5, 6)',
+            image_url TEXT NOT NULL,
+            INDEX idx_special_objective (special_objective_id),
+            INDEX idx_player_count (player_count),
+            UNIQUE KEY unique_objective_players (special_objective_id, player_count)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // Insérer des données par défaut

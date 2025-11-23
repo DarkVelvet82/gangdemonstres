@@ -138,11 +138,26 @@ function generate_objective() {
     // Si objectif déjà généré, le retourner
     if (!empty($player['objective_json'])) {
         $existing_objective = json_decode($player['objective_json'], true);
+
+        // Vérifier si c'est un objectif spécial
+        $is_special = isset($existing_objective['_special_id']);
+        $special_image = null;
+
+        if ($is_special) {
+            $special_id = $existing_objective['_special_id'];
+            $stmt = $pdo->prepare("SELECT image_url FROM " . DB_PREFIX . "special_objective_images
+                WHERE special_objective_id = ? AND player_count = ?");
+            $stmt->execute([$special_id, $game['player_count']]);
+            $special_image = $stmt->fetchColumn();
+        }
+
         send_json_response(true, [
             'objective' => $existing_objective,
             'player_name' => $player['player_name'],
             'pictos' => $pictos_v2,
-            'already_generated' => true
+            'already_generated' => true,
+            'is_special_objective' => $is_special,
+            'special_image' => $special_image
         ]);
         return;
     }
@@ -333,6 +348,40 @@ function generate_objective() {
     foreach ($existing_objectives_json as $obj_json) {
         $existing_objectives[] = json_decode($obj_json, true);
     }
+
+    // ===== TIRAGE OBJECTIF SPÉCIAL =====
+    // Le tirage a été fait à la création de la partie, on vérifie si ce joueur est le gagnant
+    // L'ordre du joueur = nombre d'objectifs déjà générés + 1
+    $current_player_order = count($existing_objectives) + 1;
+    $special_objective_result = try_assign_special_objective($pdo, $game, $current_player_order);
+
+    if ($special_objective_result !== null) {
+        // Ce joueur a gagné l'objectif spécial !
+        $objectif = $special_objective_result['objective'];
+        $objectif_json = json_encode($objectif);
+
+        // Enregistrer l'objectif spécial
+        $stmt = $pdo->prepare("UPDATE " . DB_PREFIX . "players
+            SET objective_json = ?, generated_at = NOW()
+            WHERE id = ?");
+        $stmt->execute([$objectif_json, $player_id]);
+
+        $log_steps['special_objective'] = true;
+        $log_steps['total_ms'] = round((microtime(true) - $start_time) * 1000, 2);
+
+        send_json_response(true, [
+            'objective' => $objectif,
+            'player_name' => $player['player_name'],
+            'pictos' => $pictos_v2,
+            'already_generated' => false,
+            'is_special_objective' => true,
+            'special_image' => $special_objective_result['image'],
+            'special_name' => $special_objective_result['name'],
+            'debug_timing' => $log_steps
+        ]);
+        return;
+    }
+    // ===== FIN TIRAGE OBJECTIF SPÉCIAL =====
 
     // NOUVELLE APPROCHE ÉQUILIBRÉE avec contrainte d'unicité :
     // Générer un objectif en assignant à chaque type une quantité entre min et max
