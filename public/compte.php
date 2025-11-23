@@ -277,7 +277,7 @@ require_once __DIR__ . '/../includes/functions.php';
                 <form id="login-form">
                     <div class="form-group">
                         <label>Votre prénom</label>
-                        <input type="text" id="login-prenom" placeholder="Ex: Théo" required>
+                        <input type="text" id="login-prenom" placeholder="Ex: Florine" required>
                     </div>
                     <div class="form-group">
                         <label>Votre code (5 caractères)</label>
@@ -295,7 +295,7 @@ require_once __DIR__ . '/../includes/functions.php';
                 <form id="register-form">
                     <div class="form-group">
                         <label>Votre prénom</label>
-                        <input type="text" id="register-prenom" placeholder="Ex: Théo" required>
+                        <input type="text" id="register-prenom" placeholder="Ex: Florine" required>
                     </div>
                     <div class="form-group">
                         <label>Votre email</label>
