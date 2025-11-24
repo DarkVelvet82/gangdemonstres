@@ -6,6 +6,28 @@
 
 require_once __DIR__ . '/../config/database.php';
 
+// Détection mobile - Rediriger les desktop vers une page d'info
+function is_mobile_device() {
+    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $mobile_agents = [
+        'Mobile', 'Android', 'iPhone', 'iPad', 'iPod', 'webOS',
+        'BlackBerry', 'Opera Mini', 'IEMobile', 'Windows Phone'
+    ];
+    foreach ($mobile_agents as $agent) {
+        if (stripos($user_agent, $agent) !== false) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Rediriger les non-mobiles (sauf si on est déjà sur la page mobile-only)
+$current_page = basename($_SERVER['PHP_SELF'] ?? '');
+if (!is_mobile_device() && $current_page !== 'mobile-only.php') {
+    header('Location: mobile-only.php');
+    exit;
+}
+
 // Récupérer les paramètres du site
 function get_front_setting($pdo, $key, $default = '') {
     try {
