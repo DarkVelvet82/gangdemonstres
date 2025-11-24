@@ -84,15 +84,13 @@ jobs:
           echo "=== Contents of dist/gang-de-monstres-standalone/ ==="
           ls -la dist/gang-de-monstres-standalone/ | head -20
 
-      - name: Install sshpass
-        run: sudo apt-get install -y sshpass
-
-      - name: Deploy via rsync to Hostinger
-        env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-        run: |
-          sshpass -p "$SSH_PASSWORD" rsync -avz --delete \
-            -e "ssh -p 65002 -o StrictHostKeyChecking=no" \
-            dist/ \
-            ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_SERVER }}:~/public_html/
+      - name: Deploy via FTP to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /home/u282641111/domains/gangdemonstres.com/public_html/
+          timeout: 120000
 
