@@ -84,15 +84,14 @@ jobs:
           echo "=== Contents of dist/gang-de-monstres-standalone/ ==="
           ls -la dist/gang-de-monstres-standalone/ | head -20
 
-      - name: Deploy via SFTP to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Deploy via SCP to Hostinger
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.SSH_SERVER }}
+          host: ${{ secrets.SSH_SERVER }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 65002
-          protocol: sftp
-          local-dir: ./dist/
-          server-dir: ./public_html/
-          dangerous-clean-slate: true
+          source: "dist/.htaccess,dist/gang-de-monstres-standalone"
+          target: "./public_html"
+          strip_components: 1
 
