@@ -84,13 +84,13 @@ jobs:
           echo "=== Contents of dist/gang-de-monstres-standalone/ ==="
           ls -la dist/gang-de-monstres-standalone/ | head -20
 
-      - name: Deploy via FTP to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
-          server-dir: ./
-          timeout: 120000
+      - name: Deploy via lftp to Hostinger
+        run: |
+          sudo apt-get install -y lftp
+          lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" <<EOF
+          set ssl:verify-certificate no
+          set ftp:ssl-allow yes
+          mirror -R --verbose --no-perms ./dist/ ./
+          quit
+          EOF
 
