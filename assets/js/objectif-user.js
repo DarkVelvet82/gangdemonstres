@@ -226,6 +226,14 @@
         $('#user-dashboard').show();
         $('#user-prenom').text(currentUser.prenom);
         $('#user-code-display').text(currentUser.code || '');
+
+        // Afficher le sticky mobile
+        if (typeof updateStickyVisibility === 'function') {
+            updateStickyVisibility();
+        } else {
+            // Fallback si la fonction n'existe pas encore
+            $('#sticky-new-game').css('display', '');
+        }
     }
 
     function loadUserData() {

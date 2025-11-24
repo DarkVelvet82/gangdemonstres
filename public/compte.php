@@ -580,11 +580,15 @@ require_once __DIR__ . '/../includes/functions.php';
             }
         }
 
-        function updateStickyVisibility() {
+        // Fonction globale pour afficher/cacher le sticky
+        window.updateStickyVisibility = function() {
             const dashboardContainer = document.getElementById('dashboard-container');
             const sticky = document.getElementById('sticky-new-game');
             if (dashboardContainer && sticky) {
-                const isVisible = dashboardContainer.style.display === 'block';
+                // Vérifier si le dashboard est visible
+                const isVisible = dashboardContainer.style.display === 'block' ||
+                                  (dashboardContainer.style.display === '' && getComputedStyle(dashboardContainer).display !== 'none');
+                // Retirer le style inline pour laisser le CSS gérer (display:block sur mobile via media query)
                 sticky.style.display = isVisible ? '' : 'none';
             }
         }
