@@ -47,14 +47,14 @@ $_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
         /* Menu latéral */
         .admin-sidebar {
             width: 260px;
-            background: #eddeb6;
+            background: #ffffff;
             color: #1a1a1a;
             position: fixed;
             left: 0;
             top: 0;
             bottom: 0;
             overflow-y: auto;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             z-index: 1000;
         }
 
