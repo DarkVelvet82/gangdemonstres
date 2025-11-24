@@ -91,6 +91,6 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          server-dir: /home/u282641111/domains/gangdemonstres.com/public_html/
+          server-dir: ./
           timeout: 120000
 
