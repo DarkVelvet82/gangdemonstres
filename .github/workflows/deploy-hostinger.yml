@@ -77,20 +77,14 @@ jobs:
           echo 'Require all denied' > dist/gang-de-monstres-standalone/config/.htaccess
           echo 'Require all denied' > dist/gang-de-monstres-standalone/includes/.htaccess
 
-      - name: Deploy via FTPS to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Deploy via SFTP to Hostinger
+        uses: Dylan700/sftp-upload-action@v1.1.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          local-dir: dist/
-          server-dir: ./
-          dangerous-clean-slate: true
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/node_modules/**
-            **/.DS_Store
+          port: 65002
+          uploads: |
+            ./dist/ => /public_html/
+          delete: 'true'
 
