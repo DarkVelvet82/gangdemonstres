@@ -213,7 +213,8 @@
     }
 
     function showDashboard() {
-        $('#auth-section').hide();
+        $('#auth-wrapper').hide();
+        $('#dashboard-container').show();
         $('#user-dashboard').show();
         $('#user-prenom').text(currentUser.prenom);
         $('#user-code-display').text(currentUser.code || '');
@@ -382,7 +383,8 @@
         localStorage.removeItem('objectif_user');
         currentUser = null;
         $('#user-dashboard').hide();
-        $('#auth-section').show();
+        $('#dashboard-container').hide();
+        $('#auth-wrapper').show();
         $('.auth-panel').removeClass('active');
         $('#panel-login').addClass('active');
         $('#login-prenom').val('');

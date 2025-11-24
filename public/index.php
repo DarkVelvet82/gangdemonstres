@@ -233,6 +233,25 @@ require_once __DIR__ . '/../includes/front-header.php';
             display: none;
         }
 
+        /* Footer marque */
+        .brand-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e4e8;
+            text-align: center;
+        }
+
+        .brand-logo {
+            height: 40px;
+            opacity: 0.7;
+        }
+
+        .copyright {
+            margin: 8px 0 0 0;
+            font-size: 12px;
+            color: #999;
+        }
+
     </style>
 </head>
 <body>
@@ -264,6 +283,12 @@ require_once __DIR__ . '/../includes/front-header.php';
             <button type="button" class="btn-install" id="install-btn">
                 <span>📲</span> Installer sur mon téléphone
             </button>
+        </div>
+
+        <!-- Footer marque -->
+        <div class="brand-footer">
+            <img src="../assets/images/MKDO_LOGO_BLACK_120px.png" alt="MKDO" class="brand-logo">
+            <p class="copyright">© mkdo 2025 - Tous droits réservés</p>
         </div>
 
     </div>

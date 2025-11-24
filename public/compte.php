@@ -11,6 +11,9 @@ require_once __DIR__ . '/../includes/functions.php';
     <link rel="stylesheet" href="../assets/css/objectif.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        body {
+            align-items: center !important;
+        }
         .container {
             max-width: 500px;
         }
@@ -299,7 +302,7 @@ require_once __DIR__ . '/../includes/functions.php';
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="auth-wrapper">
         <?php echo render_page_header('Mon compte', 'index.php'); ?>
 
         <!-- Formulaires Auth -->
@@ -374,9 +377,10 @@ require_once __DIR__ . '/../includes/functions.php';
                 <button type="button" class="btn-primary" id="btn-continue-after-register">Continuer</button>
             </div>
         </div>
+    </div>
 
-
-        <!-- Dashboard utilisateur connecté -->
+    <!-- Dashboard utilisateur connecté -->
+    <div class="container" id="dashboard-container" style="display:none;">
         <div class="user-dashboard" id="user-dashboard">
             <div class="user-header">
                 <h2>Bonjour <span id="user-prenom"></span> !</h2>
@@ -418,7 +422,7 @@ require_once __DIR__ . '/../includes/functions.php';
                 </div>
             </div>
 
-            <div style="text-align:center; margin-top:20px;">
+                <div style="text-align:center; margin-top:20px;">
                 <button class="btn-logout" id="btn-logout">Déconnexion</button>
             </div>
         </div>
@@ -448,9 +452,9 @@ require_once __DIR__ . '/../includes/functions.php';
                 });
             });
 
-            const dashboard = document.getElementById('user-dashboard');
-            if (dashboard) {
-                observer.observe(dashboard, { attributes: true });
+            const dashboardContainer = document.getElementById('dashboard-container');
+            if (dashboardContainer) {
+                observer.observe(dashboardContainer, { attributes: true });
             }
         });
 
@@ -514,10 +518,10 @@ require_once __DIR__ . '/../includes/functions.php';
         }
 
         function updateStickyVisibility() {
-            const dashboard = document.getElementById('user-dashboard');
+            const dashboardContainer = document.getElementById('dashboard-container');
             const sticky = document.getElementById('sticky-new-game');
-            if (dashboard && sticky) {
-                const isVisible = dashboard.style.display === 'block';
+            if (dashboardContainer && sticky) {
+                const isVisible = dashboardContainer.style.display === 'block';
                 sticky.style.display = isVisible ? '' : 'none';
             }
         }
