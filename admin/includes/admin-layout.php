@@ -373,9 +373,6 @@ $_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
             <a href="users.php" class="nav-item <?php echo $current_page === 'users.php' ? 'active' : ''; ?>">
                 <span class="icon">👥</span> Utilisateurs
             </a>
-            <a href="test-player-multiplier.php" class="nav-item <?php echo $current_page === 'test-player-multiplier.php' ? 'active' : ''; ?>">
-                <span class="icon">🧪</span> Test Multiplicateur
-            </a>
             <a href="settings.php" class="nav-item <?php echo $current_page === 'settings.php' ? 'active' : ''; ?>">
                 <span class="icon">⚙️</span> Paramètres
             </a>
