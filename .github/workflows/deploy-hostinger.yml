@@ -90,7 +90,7 @@ jobs:
           lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" <<EOF
           set ssl:verify-certificate no
           set ftp:ssl-allow yes
-          mirror -R --verbose --no-perms ./dist/ ./
+          mirror -R --verbose --no-perms --only-newer --ignore-time ./dist/ ./
           quit
           EOF
 
