@@ -77,14 +77,14 @@ jobs:
           echo 'Require all denied' > dist/gang-de-monstres-standalone/config/.htaccess
           echo 'Require all denied' > dist/gang-de-monstres-standalone/includes/.htaccess
 
-      - name: Deploy via SFTP to Hostinger
-        uses: Dylan700/sftp-upload-action@v1.1.4
+      - name: Deploy via SSH to Hostinger
+        uses: easingthemes/ssh-deploy@v5.1.0
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 65002
-          uploads: |
-            ./dist/ => /public_html/
-          delete: 'true'
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.FTP_SERVER }}
+          REMOTE_USER: ${{ secrets.FTP_USERNAME }}
+          REMOTE_PORT: 65002
+          SOURCE: dist/
+          TARGET: ~/public_html/
+          ARGS: -avzr --delete
 
