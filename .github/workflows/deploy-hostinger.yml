@@ -80,8 +80,8 @@ jobs:
       - name: Deploy via SFTP to Hostinger
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.SSH_SERVER }}
+          username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: 65002
           local_path: './dist/*'
