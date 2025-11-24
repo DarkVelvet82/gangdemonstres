@@ -47,21 +47,21 @@ $_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
         /* Menu latéral */
         .admin-sidebar {
             width: 260px;
-            background: #1a1a1a;
-            color: white;
+            background: #eddeb6;
+            color: #1a1a1a;
             position: fixed;
             left: 0;
             top: 0;
             bottom: 0;
             overflow-y: auto;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.15);
             z-index: 1000;
         }
 
         .sidebar-header {
             padding: 25px 20px;
-            background: rgba(0,0,0,0.2);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.08);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
             text-align: center;
         }
 
@@ -89,7 +89,7 @@ $_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
         .nav-item {
             display: block;
             padding: 12px 20px;
-            color: rgba(255,255,255,0.8);
+            color: rgba(0,0,0,0.7);
             text-decoration: none;
             transition: all 0.2s;
             border-left: 3px solid transparent;
@@ -98,14 +98,14 @@ $_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
         }
 
         .nav-item:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
+            background: rgba(0,0,0,0.08);
+            color: #1a1a1a;
         }
 
         .nav-item.active {
-            background: rgba(255,255,255,0.15);
-            border-left-color: #667eea;
-            color: white;
+            background: rgba(0,0,0,0.12);
+            border-left-color: #1a1a1a;
+            color: #1a1a1a;
             font-weight: 600;
         }
 
@@ -121,15 +121,15 @@ $_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
             left: 0;
             right: 0;
             padding: 15px 20px;
-            background: rgba(0,0,0,0.2);
-            border-top: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.08);
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
 
         .sidebar-footer a {
             display: block;
             padding: 8px 12px;
             margin-bottom: 5px;
-            color: rgba(255,255,255,0.8);
+            color: #fff;
             text-decoration: none;
             border-radius: 6px;
             font-size: 13px;
@@ -138,27 +138,27 @@ $_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
         }
 
         .sidebar-footer .btn-account {
-            background: rgba(23, 162, 184, 0.3);
+            background: #17a2b8;
         }
 
         .sidebar-footer .btn-account:hover {
-            background: rgba(23, 162, 184, 0.5);
+            background: #138496;
         }
 
         .sidebar-footer .btn-public {
-            background: rgba(40, 167, 69, 0.3);
+            background: #28a745;
         }
 
         .sidebar-footer .btn-public:hover {
-            background: rgba(40, 167, 69, 0.5);
+            background: #218838;
         }
 
         .sidebar-footer .btn-logout {
-            background: rgba(220, 53, 69, 0.3);
+            background: #dc3545;
         }
 
         .sidebar-footer .btn-logout:hover {
-            background: rgba(220, 53, 69, 0.5);
+            background: #c82333;
         }
 
         /* Contenu principal */
