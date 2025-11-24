@@ -55,6 +55,14 @@
             sendCode();
         });
 
+        // Fermer la modale email envoyé
+        $('#modal-email-close').on('click', function() {
+            $('#modal-email-sent').fadeOut(200, function() {
+                $('.auth-panel').removeClass('active');
+                $('#panel-login').addClass('active');
+            });
+        });
+
         // Continue after register
         $('#btn-continue-after-register').on('click', function() {
             showDashboard();
@@ -202,9 +210,9 @@
                 email: email
             },
             success: function(response) {
-                alert('Si cet email est enregistré, vous recevrez votre code par email.');
-                $('.auth-panel').removeClass('active');
-                $('#panel-login').addClass('active');
+                // Afficher la modale personnalisée
+                $('#modal-email-sent').fadeIn(200);
+                $('#forgot-email').val('');
             },
             error: function() {
                 showError('Erreur de connexion au serveur');

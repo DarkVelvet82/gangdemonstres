@@ -433,6 +433,69 @@ require_once __DIR__ . '/../includes/functions.php';
         <a href="creer-partie.php" id="sticky-action-btn">Créer une nouvelle partie</a>
     </div>
 
+    <!-- Modale confirmation email envoyé -->
+    <div id="modal-email-sent" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <img src="../assets/images/logo_1763819204.png" alt="Gang de Monstres" class="modal-logo">
+            <h3>Email envoyé !</h3>
+            <p>Si cette adresse est enregistrée, vous recevrez votre code par email.</p>
+            <p class="modal-hint">Pensez à vérifier vos spams</p>
+            <button type="button" class="btn-primary" id="modal-email-close">OK, compris !</button>
+        </div>
+    </div>
+
+    <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+            margin: 20px;
+            animation: slideUp 0.3s ease;
+        }
+        .modal-logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .modal-content h3 {
+            margin: 0 0 15px 0;
+            color: #003f53;
+            font-size: 22px;
+        }
+        .modal-content p {
+            color: #666;
+            margin: 0 0 10px 0;
+            font-size: 15px;
+        }
+        .modal-hint {
+            font-size: 13px !important;
+            color: #999 !important;
+            font-style: italic;
+        }
+        .modal-content .btn-primary {
+            margin-top: 20px;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
     <script src="../assets/js/app-config.js"></script>
     <script src="../assets/js/objectif-user.js"></script>
     <script>
