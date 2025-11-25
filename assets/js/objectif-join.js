@@ -20,7 +20,10 @@ window.ObjectifJoin = (function($) {
                 handleJoinSuccess(response);
             },
             error: function(err) {
-                alert('Erreur AJAX lors de la connexion.');
+                AppModal.alert('Impossible de se connecter. Vérifiez votre connexion.', {
+                    title: 'Erreur de connexion',
+                    type: 'error'
+                });
             }
         });
     }
@@ -47,7 +50,10 @@ window.ObjectifJoin = (function($) {
                 $('#objectif-redirect').html('<a href="' + redirectUrl + '" class="objectif-go">➡️ Aller à ma page d\'objectif</a>');
             }
         } else {
-            alert('Erreur : ' + response.data);
+            AppModal.alert(response.data || 'Code invalide ou partie non trouvée', {
+                title: 'Erreur',
+                type: 'error'
+            });
         }
     }
 
@@ -79,7 +85,10 @@ window.ObjectifJoin = (function($) {
                 },
                 error: function(err) {
                     console.error('❌ Erreur AJAX auto-connexion:', err);
-                    alert('Erreur de connexion. Veuillez réessayer.');
+                    AppModal.alert('Impossible de se connecter automatiquement. Veuillez réessayer.', {
+                        title: 'Erreur de connexion',
+                        type: 'error'
+                    });
                 }
             });
         }
@@ -134,7 +143,10 @@ window.ObjectifJoin = (function($) {
 
         } else {
             console.error('❌ Erreur auto-connexion:', response.data);
-            alert('Erreur lors de la connexion automatique : ' + response.data);
+            AppModal.alert(response.data || 'Code invalide ou partie non trouvée', {
+                title: 'Erreur de connexion',
+                type: 'error'
+            });
         }
     }
 

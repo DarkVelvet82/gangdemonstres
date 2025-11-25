@@ -323,6 +323,7 @@ $game_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
     </div>
 
     <script src="../assets/js/app-config.js"></script>
+    <script src="../assets/js/modal-component.js"></script>
     <script src="../assets/js/objectif-main.js"></script>
     <script src="../assets/js/objectif-qr.js"></script>
     <script src="../assets/js/objectif-status.js"></script>

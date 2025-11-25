@@ -165,6 +165,7 @@ require_once __DIR__ . '/../includes/front-header.php';
     </div>
 
     <script src="../assets/js/app-config.js"></script>
+    <script src="../assets/js/modal-component.js"></script>
     <script src="../assets/js/objectif-main.js"></script>
     <script src="../assets/js/objectif-join.js"></script>
     <script>

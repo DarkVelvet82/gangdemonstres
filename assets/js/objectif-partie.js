@@ -276,8 +276,16 @@ window.ObjectifPartie = (function($) {
         }
     }
 
-    function cancelGame() {
-        if (!confirm('Êtes-vous sûr de vouloir annuler cette partie ? Cette action est irréversible.')) {
+    async function cancelGame() {
+        const confirmed = await AppModal.confirm('Cette action est irréversible. La partie sera supprimée pour tous les joueurs.', {
+            title: 'Annuler la partie ?',
+            confirmText: 'Oui, annuler',
+            cancelText: 'Non, garder',
+            type: 'danger',
+            icon: '⚠️'
+        });
+
+        if (!confirmed) {
             return;
         }
 
@@ -294,7 +302,7 @@ window.ObjectifPartie = (function($) {
                 game_id: gameId,
                 player_id: playerId
             },
-            success: function(response) {
+            success: async function(response) {
                 if (response.success) {
                     // Nettoyer le localStorage
                     localStorage.removeItem('objectif_player_id');
@@ -307,15 +315,24 @@ window.ObjectifPartie = (function($) {
                         clearInterval(statusInterval);
                     }
 
-                    alert('Partie annulée avec succès.');
+                    await AppModal.alert('La partie a été annulée avec succès.', {
+                        title: 'Partie annulée',
+                        type: 'success'
+                    });
                     window.location.href = 'index.php';
                 } else {
-                    alert('Erreur : ' + (response.message || response.data || 'Erreur inconnue'));
+                    AppModal.alert(response.message || response.data || 'Erreur inconnue', {
+                        title: 'Erreur',
+                        type: 'error'
+                    });
                     $button.prop('disabled', false).text('❌ Annuler la partie');
                 }
             },
             error: function() {
-                alert('Erreur de connexion.');
+                AppModal.alert('Impossible de contacter le serveur. Vérifiez votre connexion.', {
+                    title: 'Erreur de connexion',
+                    type: 'error'
+                });
                 $button.prop('disabled', false).text('❌ Annuler la partie');
             }
         });

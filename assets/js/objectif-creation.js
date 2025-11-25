@@ -262,11 +262,12 @@ window.ObjectifCreation = (function($) {
     }
 
     // Création de partie avec formulaire
-    $(document).on('submit', '#objectif-create-form', function(e) {
+    $(document).on('submit', '#objectif-create-form', async function(e) {
         e.preventDefault();
 
         const formData = collectFormData();
-        if (!validateFormData(formData)) {
+        const isValid = await validateFormData(formData);
+        if (!isValid) {
             return;
         }
 
@@ -311,19 +312,28 @@ window.ObjectifCreation = (function($) {
         };
     }
 
-    function validateFormData(data) {
+    async function validateFormData(data) {
         if (!data.creatorName) {
-            alert('Veuillez entrer votre prénom');
+            await AppModal.alert('Veuillez entrer votre prénom', {
+                title: 'Prénom manquant',
+                type: 'warning'
+            });
             return false;
         }
 
         if (!data.baseGame) {
-            alert('Veuillez sélectionner un jeu de base');
+            await AppModal.alert('Veuillez sélectionner un jeu de base', {
+                title: 'Jeu manquant',
+                type: 'warning'
+            });
             return false;
         }
 
         if (data.otherNames.length !== (data.playerCount - 1)) {
-            alert('Veuillez remplir tous les prénoms des autres joueurs');
+            await AppModal.alert('Veuillez remplir tous les prénoms des autres joueurs', {
+                title: 'Joueurs manquants',
+                type: 'warning'
+            });
             return false;
         }
 
@@ -362,12 +372,18 @@ window.ObjectifCreation = (function($) {
                 if (response.success) {
                     handleGameCreationSuccess(response.data);
                 } else {
-                    alert('Erreur : ' + response.data);
+                    AppModal.alert(response.data || 'Une erreur est survenue', {
+                        title: 'Erreur',
+                        type: 'error'
+                    });
                 }
             },
             error: function(err) {
                 $button.prop('disabled', false).text(originalText);
-                alert('Erreur AJAX.');
+                AppModal.alert('Impossible de créer la partie. Vérifiez votre connexion.', {
+                    title: 'Erreur de connexion',
+                    type: 'error'
+                });
             }
         });
     }
@@ -479,8 +495,16 @@ window.ObjectifCreation = (function($) {
         });
     }
 
-    function cancelGame(gameId) {
-        if (!confirm('Êtes-vous sûr de vouloir annuler cette partie ? Cette action est irréversible.')) {
+    async function cancelGame(gameId) {
+        const confirmed = await AppModal.confirm('Cette action est irréversible. La partie sera supprimée pour tous les joueurs.', {
+            title: 'Annuler la partie ?',
+            confirmText: 'Oui, annuler',
+            cancelText: 'Non, garder',
+            type: 'danger',
+            icon: '⚠️'
+        });
+
+        if (!confirmed) {
             return;
         }
 
@@ -498,7 +522,7 @@ window.ObjectifCreation = (function($) {
                 game_id: gameId,
                 player_id: playerId
             },
-            success: function(response) {
+            success: async function(response) {
                 if (response.success) {
                     // Nettoyer le localStorage
                     localStorage.removeItem('objectif_player_id');
@@ -511,15 +535,24 @@ window.ObjectifCreation = (function($) {
                     }
 
                     // Afficher le message et rediriger
-                    alert('Partie annulée avec succès.');
+                    await AppModal.alert('La partie a été annulée avec succès.', {
+                        title: 'Partie annulée',
+                        type: 'success'
+                    });
                     window.location.href = 'index.php';
                 } else {
-                    alert('Erreur : ' + (response.message || response.data || 'Erreur inconnue'));
+                    AppModal.alert(response.message || response.data || 'Erreur inconnue', {
+                        title: 'Erreur',
+                        type: 'error'
+                    });
                     $button.prop('disabled', false).text('❌ Annuler la partie');
                 }
             },
             error: function() {
-                alert('Erreur de connexion.');
+                AppModal.alert('Impossible de contacter le serveur. Vérifiez votre connexion.', {
+                    title: 'Erreur de connexion',
+                    type: 'error'
+                });
                 $button.prop('disabled', false).text('❌ Annuler la partie');
             }
         });

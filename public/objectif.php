@@ -449,6 +449,7 @@ require_once __DIR__ . '/../includes/front-header.php';
     </div>
 
     <script src="../assets/js/app-config.js"></script>
+    <script src="../assets/js/modal-component.js"></script>
     <script>
         // Passer le chemin du logo au JavaScript
         window.siteLogo = '<?php echo htmlspecialchars($logo_path); ?>';
