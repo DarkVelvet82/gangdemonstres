@@ -501,7 +501,7 @@ window.ObjectifCreation = (function($) {
             confirmText: 'Oui, annuler',
             cancelText: 'Non, garder',
             type: 'danger',
-            icon: '⚠️'
+            image: '../assets/images/mitard.jpg'
         });
 
         if (!confirmed) {

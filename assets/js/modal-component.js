@@ -102,12 +102,18 @@ window.AppModal = (function($) {
             const cancelText = options.cancelText || 'Annuler';
             const type = options.type || 'warning'; // warning, danger, info
             const icon = options.icon || '❓';
+            const image = options.image || null;
 
             const confirmColors = {
                 warning: '#ffc107',
                 danger: '#dc3545',
                 info: '#007cba'
             };
+
+            // Utiliser une image si fournie, sinon l'icône
+            const iconHtml = image
+                ? `<img src="${image}" alt="" style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; margin-bottom: 15px;">`
+                : `<div style="font-size: 48px; margin-bottom: 15px;">${icon}</div>`;
 
             const modalHtml = `
                 <div class="app-modal-overlay" style="
@@ -134,7 +140,7 @@ window.AppModal = (function($) {
                         animation: appModalSlideUp 0.3s ease;
                         box-shadow: 0 10px 40px rgba(0,0,0,0.3);
                     ">
-                        <div style="font-size: 48px; margin-bottom: 15px;">${icon}</div>
+                        ${iconHtml}
                         <h3 style="margin: 0 0 15px 0; color: #003f53; font-size: 20px;">${title}</h3>
                         <p style="color: #666; margin: 0 0 20px 0; font-size: 15px; line-height: 1.5;">${message}</p>
                         <div style="display: flex; gap: 10px;">
