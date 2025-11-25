@@ -88,19 +88,42 @@ window.ObjectifJoin = (function($) {
     function handleAutoJoinSuccess(response) {
         if (response.success) {
             console.log('✅ Auto-connexion réussie:', response.data);
-            
+
             // Stocker les données
             localStorage.setItem('objectif_player_id', response.data.player_id);
             localStorage.setItem('objectif_game_id', response.data.game_id);
             localStorage.setItem('objectif_is_creator', response.data.is_creator ? '1' : '0');
-            
-            // Afficher un message de succès
-            $('body').prepend(`
-                <div class="auto-join-success" style="background:#d4edda; color:#155724; padding:15px; margin:10px 0; border-radius:8px; border:1px solid #c3e6cb;">
-                    ✅ Connexion automatique réussie ! Vous pouvez maintenant générer votre objectif.
+
+            // Afficher un toast discret qui disparaît
+            const $toast = $(`
+                <div class="auto-join-toast" style="
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #28a745;
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    z-index: 9999;
+                    animation: slideDown 0.3s ease;
+                ">
+                    ✅ Connexion réussie !
                 </div>
             `);
-            
+
+            $('body').append($toast);
+
+            // Disparaît après 2 secondes
+            setTimeout(function() {
+                $toast.fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 2000);
+
         } else {
             console.error('❌ Erreur auto-connexion:', response.data);
             alert('Erreur lors de la connexion automatique : ' + response.data);
