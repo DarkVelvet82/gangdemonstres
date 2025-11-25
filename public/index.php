@@ -298,6 +298,85 @@ require_once __DIR__ . '/../includes/front-header.php';
             color: #999;
         }
 
+        /* Modale confirmation */
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+        .confirm-modal-overlay.active {
+            display: flex;
+        }
+        .confirm-modal {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+            margin: 20px;
+            animation: slideUp 0.3s ease;
+        }
+        .confirm-modal-logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .confirm-modal h3 {
+            margin: 0 0 15px 0;
+            color: #003f53;
+            font-size: 20px;
+        }
+        .confirm-modal p {
+            color: #666;
+            margin: 0 0 10px 0;
+            font-size: 15px;
+        }
+        .confirm-modal-hint {
+            font-size: 13px !important;
+            color: #999 !important;
+            font-style: italic;
+        }
+        .confirm-modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .confirm-modal-buttons button {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-confirm-yes {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-confirm-yes:hover {
+            background: #c82333;
+        }
+        .btn-confirm-no {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-confirm-no:hover {
+            background: #e0e0e0;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
     </style>
 </head>
 <body>
@@ -351,6 +430,20 @@ require_once __DIR__ . '/../includes/front-header.php';
             <p class="copyright">© mkdo 2025 - Tous droits réservés</p>
         </div>
 
+    </div>
+
+    <!-- Modale confirmation quitter partie -->
+    <div class="confirm-modal-overlay" id="confirm-quit-modal">
+        <div class="confirm-modal">
+            <img src="../assets/images/logo_1763819204.png" alt="Gang de Monstres" class="confirm-modal-logo">
+            <h3>Quitter la partie ?</h3>
+            <p>Vous pourrez toujours la rejoindre plus tard avec votre code.</p>
+            <p class="confirm-modal-hint">Votre progression sera conservée</p>
+            <div class="confirm-modal-buttons">
+                <button type="button" class="btn-confirm-no" id="confirm-quit-no">Annuler</button>
+                <button type="button" class="btn-confirm-yes" id="confirm-quit-yes">Quitter</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal d'instructions d'installation -->
@@ -457,12 +550,33 @@ require_once __DIR__ . '/../includes/front-header.php';
             });
         }
 
-        // Bouton quitter la partie
+        // Modale de confirmation
+        const confirmQuitModal = document.getElementById('confirm-quit-modal');
+        const confirmQuitYes = document.getElementById('confirm-quit-yes');
+        const confirmQuitNo = document.getElementById('confirm-quit-no');
+
+        // Bouton quitter la partie - ouvre la modale
         btnQuitGame.addEventListener('click', function() {
-            if (confirm('Voulez-vous vraiment quitter cette partie ? Vous pourrez toujours la rejoindre avec votre code.')) {
-                clearGameData();
-                currentGameSection.style.display = 'none';
-                btnCreateGame.style.display = 'block';
+            confirmQuitModal.classList.add('active');
+        });
+
+        // Bouton Annuler
+        confirmQuitNo.addEventListener('click', function() {
+            confirmQuitModal.classList.remove('active');
+        });
+
+        // Bouton Quitter (confirme)
+        confirmQuitYes.addEventListener('click', function() {
+            clearGameData();
+            currentGameSection.style.display = 'none';
+            btnCreateGame.style.display = 'block';
+            confirmQuitModal.classList.remove('active');
+        });
+
+        // Fermer en cliquant sur l'overlay
+        confirmQuitModal.addEventListener('click', function(e) {
+            if (e.target === confirmQuitModal) {
+                confirmQuitModal.classList.remove('active');
             }
         });
 
