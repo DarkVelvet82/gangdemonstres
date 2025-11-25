@@ -397,9 +397,27 @@ window.ObjectifNotifications = (function($) {
                     <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
                         Merci d'avoir joué ! À bientôt 🎮
                     </p>
+                    <p style="margin: 10px 0 0 0; font-size: 14px; color: #555;">
+                        Merci de nous laisser un avis sur Google :
+                    </p>
                 </div>
 
-                <div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <a href="https://www.google.com/maps/place//data=!4m3!3m2!1s0x682068fe27ee1531:0xe09a89dc6aeb165c!12e1" target="_blank" style="
+                        display: inline-block;
+                        background: #4285F4;
+                        color: white;
+                        border: none;
+                        padding: 14px 28px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 16px;
+                        font-weight: bold;
+                        text-decoration: none;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                    ">
+                        ⭐ Laisser un avis Google
+                    </a>
                     <a href="index.php" class="session-closed-btn" style="
                         display: inline-block;
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
