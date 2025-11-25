@@ -77,8 +77,7 @@ window.ObjectifObjectives = (function($) {
                     // Afficher un message de session terminée
                     const sessionEndedHtml = generateSessionEndedHTML();
                     $('#objectif-state').html(sessionEndedHtml);
-                    $('#welcome-message').text('Session terminée');
-                    $('.welcome-subtitle').hide();
+                    $('.welcome-section').hide();
                     return;
                 }
 
@@ -108,8 +107,7 @@ window.ObjectifObjectives = (function($) {
                         // Afficher un message de session terminée
                         const sessionEndedHtml = generateSessionEndedHTML();
                         $('#objectif-state').html(sessionEndedHtml);
-                        $('#welcome-message').text('Session terminée');
-                        $('.welcome-subtitle').hide();
+                        $('.welcome-section').hide();
                         return;
                     }
 
