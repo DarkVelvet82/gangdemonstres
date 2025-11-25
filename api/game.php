@@ -594,7 +594,7 @@ function get_game_cards() {
 
     // Récupérer les infos des jeux
     $placeholders = implode(',', array_fill(0, count($game_set_ids), '?'));
-    $stmt = $pdo->prepare("SELECT id, name FROM " . DB_PREFIX . "game_sets WHERE id IN ($placeholders) ORDER BY is_extension ASC, name ASC");
+    $stmt = $pdo->prepare("SELECT id, name FROM " . DB_PREFIX . "game_sets WHERE id IN ($placeholders) ORDER BY name ASC");
     $stmt->execute($game_set_ids);
     $game_sets = $stmt->fetchAll();
 
