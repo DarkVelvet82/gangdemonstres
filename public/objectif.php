@@ -577,8 +577,9 @@ require_once __DIR__ . '/../includes/front-header.php';
                 };
                 const typeLabel = cardTypes[card.card_type] || card.card_type;
 
-                const imageHtml = card.image_url
-                    ? `<img src="${card.image_url}" alt="${card.name}" class="card-item-image">`
+                const cardImageUrl = card.image_url ? card.image_url.replace('../assets/', '/assets/') : null;
+                const imageHtml = cardImageUrl
+                    ? `<img src="${cardImageUrl}" alt="${card.name}" class="card-item-image">`
                     : `<div class="card-item-noimage">${card.name}</div>`;
 
                 html += `
@@ -597,9 +598,20 @@ require_once __DIR__ . '/../includes/front-header.php';
 
             // Event sur les cartes
             $content.find('.card-item').on('click', function() {
-                const card = $(this).data('card');
-                showCardFullview(card);
+                const cardData = $(this).data('card');
+                if (cardData) {
+                    showCardFullview(cardData);
+                }
             });
+        }
+
+        // Normaliser l'URL de l'image (../assets/ -> /assets/)
+        function normalizeImageUrl(url) {
+            if (!url) return url;
+            if (url.startsWith('../assets/')) {
+                return url.replace('../assets/', '/assets/');
+            }
+            return url;
         }
 
         // Afficher une carte en grand (juste l'image)
@@ -607,8 +619,9 @@ require_once __DIR__ . '/../includes/front-header.php';
             const $overlay = $('#card-fullview-overlay');
             const $fullview = $('#card-fullview');
 
-            if (card.image_url) {
-                $fullview.html(`<img src="${card.image_url}" alt="${card.name}">`);
+            const imageUrl = normalizeImageUrl(card.image_url);
+            if (imageUrl) {
+                $fullview.html(`<img src="${imageUrl}" alt="${card.name || ''}">`);
                 $overlay.addClass('open');
             }
         }
