@@ -112,7 +112,7 @@ window.AppModal = (function($) {
 
             // Utiliser une image si fournie, sinon l'icône
             const iconHtml = image
-                ? `<img src="${image}" alt="" style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; margin-bottom: 15px;">`
+                ? `<img src="${image}" alt="" style="width: 100%; max-width: 280px; height: auto; object-fit: contain; border-radius: 8px; margin-bottom: 15px;">`
                 : `<div style="font-size: 48px; margin-bottom: 15px;">${icon}</div>`;
 
             const modalHtml = `
