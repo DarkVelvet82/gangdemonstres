@@ -583,7 +583,7 @@ require_once __DIR__ . '/../includes/front-header.php';
                     : `<div class="card-item-noimage">${card.name}</div>`;
 
                 html += `
-                    <div class="card-item" data-card='${JSON.stringify(card)}'>
+                    <div class="card-item" data-image="${cardImageUrl || ''}">
                         ${imageHtml}
                         <div class="card-item-info">
                             <p class="card-item-name">${card.name}</p>
@@ -598,32 +598,20 @@ require_once __DIR__ . '/../includes/front-header.php';
 
             // Event sur les cartes
             $content.find('.card-item').on('click', function() {
-                const cardData = $(this).data('card');
-                if (cardData) {
-                    showCardFullview(cardData);
+                const imageUrl = $(this).data('image');
+                if (imageUrl) {
+                    showCardFullview(imageUrl);
                 }
             });
         }
 
-        // Normaliser l'URL de l'image (../assets/ -> /assets/)
-        function normalizeImageUrl(url) {
-            if (!url) return url;
-            if (url.startsWith('../assets/')) {
-                return url.replace('../assets/', '/assets/');
-            }
-            return url;
-        }
-
         // Afficher une carte en grand (juste l'image)
-        function showCardFullview(card) {
+        function showCardFullview(imageUrl) {
             const $overlay = $('#card-fullview-overlay');
             const $fullview = $('#card-fullview');
 
-            const imageUrl = normalizeImageUrl(card.image_url);
-            if (imageUrl) {
-                $fullview.html(`<img src="${imageUrl}" alt="${card.name || ''}">`);
-                $overlay.addClass('open');
-            }
+            $fullview.html(`<img src="${imageUrl}" alt="">`);
+            $overlay.addClass('open');
         }
 
         // Fermer la vue carte en grand
