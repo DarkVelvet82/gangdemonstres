@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Prepare deploy package (dist/)
         shell: bash
@@ -77,19 +79,54 @@ jobs:
           echo 'Require all denied' > dist/config/.htaccess
           echo 'Require all denied' > dist/includes/.htaccess
 
-      - name: List dist contents (debug)
+      - name: Get changed files
+        id: changed
         run: |
-          echo "=== Contents of dist/ ==="
-          ls -la dist/
-          echo "=== Contents of dist/admin/ ==="
-          ls -la dist/admin/ | head -20
+          # Obtenir la liste des fichiers modifiés dans ce commit
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No changed files detected, will upload .htaccess and secrets only"
+            echo "files=.htaccess config/secrets.php config/.htaccess includes/.htaccess" >> $GITHUB_OUTPUT
+          else
+            echo "Changed files: $CHANGED_FILES"
+            echo "files<<EOF" >> $GITHUB_OUTPUT
+            echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Deploy via lftp to Hostinger
+      - name: Deploy changed files via lftp
         run: |
           sudo apt-get install -y lftp
-          lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" <<EOF
+
+          # Créer un script lftp pour uploader seulement les fichiers modifiés
+          cat > upload.lftp <<'SCRIPT'
           set ssl:verify-certificate no
           set ftp:ssl-allow yes
-          mirror -R --verbose --only-newer --no-perms ./dist/ ./
-          quit
-          EOF
+
+          # Toujours uploader .htaccess et secrets
+          put -O ./ ./dist/.htaccess
+          put -O ./config/ ./dist/config/secrets.php
+          put -O ./config/ ./dist/config/.htaccess
+          put -O ./includes/ ./dist/includes/.htaccess
+          SCRIPT
+
+          # Ajouter les fichiers modifiés au script
+          echo '${{ steps.changed.outputs.files }}' | while read -r file; do
+            if [ -n "$file" ] && [ -f "dist/$file" ]; then
+              dir=$(dirname "$file")
+              if [ "$dir" = "." ]; then
+                echo "put -O ./ ./dist/$file" >> upload.lftp
+              else
+                echo "mkdir -p $dir" >> upload.lftp
+                echo "put -O ./$dir/ ./dist/$file" >> upload.lftp
+              fi
+            fi
+          done
+
+          echo "quit" >> upload.lftp
+
+          echo "=== Upload script ==="
+          cat upload.lftp
+          echo "===================="
+
+          lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" "${{ secrets.FTP_SERVER }}" < upload.lftp
