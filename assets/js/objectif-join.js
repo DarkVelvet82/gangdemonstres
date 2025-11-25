@@ -11,9 +11,8 @@ window.ObjectifJoin = (function($) {
     function joinGameWithCode(code) {
         $.ajax({
             method: 'POST',
-            url: objectif_ajax.ajax_url,
+            url: objectif_ajax.ajax_url + 'game.php?action=join',
             data: {
-                action: 'objectif_join_game',
                 nonce: objectif_ajax.nonce,
                 code: code
             },
@@ -67,12 +66,11 @@ window.ObjectifJoin = (function($) {
         } else {
             // Page objectifs - connexion directe
             console.log('🎯 Page objectifs détectée, connexion AJAX directe...');
-            
+
             $.ajax({
                 method: 'POST',
-                url: objectif_ajax.ajax_url,
+                url: objectif_ajax.ajax_url + 'game.php?action=join',
                 data: {
-                    action: 'objectif_join_game',
                     nonce: objectif_ajax.nonce,
                     code: playerCode
                 },

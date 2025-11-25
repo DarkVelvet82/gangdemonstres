@@ -411,6 +411,7 @@ require_once __DIR__ . '/../includes/front-header.php';
         // Passer le chemin du logo au JavaScript
         window.siteLogo = '<?php echo htmlspecialchars($logo_path); ?>';
     </script>
+    <script src="../assets/js/objectif-join.js"></script>
     <script src="../assets/js/objectif-main.js"></script>
     <script src="../assets/js/objectif-notifications.js"></script>
     <script src="../assets/js/objectif-objectives.js"></script>
