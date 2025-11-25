@@ -123,7 +123,7 @@ function generate_objective() {
         if (!empty($type['image_url'])) {
             $pictos_v2[$type['id']] = [
                 'type' => 'image',
-                'value' => $type['image_url'],
+                'value' => normalize_image_url($type['image_url']),
                 'name' => $type['name']
             ];
         } else {
@@ -148,11 +148,7 @@ function generate_objective() {
             $stmt = $pdo->prepare("SELECT image_url FROM " . DB_PREFIX . "special_objective_images
                 WHERE special_objective_id = ? AND player_count = ?");
             $stmt->execute([$special_id, $game['player_count']]);
-            $special_image = $stmt->fetchColumn();
-            // Convertir le chemin relatif admin vers chemin absolu
-            if ($special_image && strpos($special_image, '../assets/') === 0) {
-                $special_image = str_replace('../assets/', '/assets/', $special_image);
-            }
+            $special_image = normalize_image_url($stmt->fetchColumn());
         }
 
         send_json_response(true, [
@@ -538,7 +534,7 @@ function check_objective() {
             if (!empty($type['image_url'])) {
                 $pictos_v2[$type['id']] = [
                     'type' => 'image',
-                    'value' => $type['image_url'],
+                    'value' => normalize_image_url($type['image_url']),
                     'name' => $type['name']
                 ];
             } else {

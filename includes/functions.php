@@ -2,6 +2,18 @@
 // includes/functions.php - Fonctions utilitaires
 
 /**
+ * Normaliser un chemin d'image pour qu'il fonctionne depuis n'importe où
+ * Convertit ../assets/... en /assets/...
+ */
+function normalize_image_url($url) {
+    if (empty($url)) return $url;
+    if (strpos($url, '../assets/') === 0) {
+        return str_replace('../assets/', '/assets/', $url);
+    }
+    return $url;
+}
+
+/**
  * Envoyer une réponse JSON
  */
 function send_json_response($success, $data = [], $message = '') {
