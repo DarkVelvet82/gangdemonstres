@@ -602,28 +602,15 @@ require_once __DIR__ . '/../includes/front-header.php';
             });
         }
 
-        // Afficher une carte en grand
+        // Afficher une carte en grand (juste l'image)
         function showCardFullview(card) {
             const $overlay = $('#card-fullview-overlay');
             const $fullview = $('#card-fullview');
 
-            const imageHtml = card.image_url
-                ? `<img src="${card.image_url}" alt="${card.name}">`
-                : `<div class="card-fullview-noimage">${card.name}</div>`;
-
-            const powerHtml = card.power_text
-                ? `<p class="card-fullview-power">${card.power_text}</p>`
-                : '';
-
-            $fullview.html(`
-                ${imageHtml}
-                <div class="card-fullview-info">
-                    <h3 class="card-fullview-name">${card.name}</h3>
-                    ${powerHtml}
-                </div>
-            `);
-
-            $overlay.addClass('open');
+            if (card.image_url) {
+                $fullview.html(`<img src="${card.image_url}" alt="${card.name}">`);
+                $overlay.addClass('open');
+            }
         }
 
         // Fermer la vue carte en grand
