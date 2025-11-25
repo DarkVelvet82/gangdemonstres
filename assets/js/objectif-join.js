@@ -94,6 +94,9 @@ window.ObjectifJoin = (function($) {
             localStorage.setItem('objectif_game_id', response.data.game_id);
             localStorage.setItem('objectif_is_creator', response.data.is_creator ? '1' : '0');
 
+            // Supprimer les anciens toasts avant d'en créer un nouveau
+            $('.auto-join-toast').remove();
+
             // Afficher un toast discret qui disparaît
             const $toast = $(`
                 <div class="auto-join-toast" style="
@@ -109,7 +112,6 @@ window.ObjectifJoin = (function($) {
                     font-weight: 600;
                     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
                     z-index: 9999;
-                    animation: slideDown 0.3s ease;
                 ">
                     ✅ Connexion réussie !
                 </div>
@@ -125,7 +127,7 @@ window.ObjectifJoin = (function($) {
 
             // Disparaît après 2 secondes
             setTimeout(function() {
-                $toast.fadeOut(300, function() {
+                $('.auto-join-toast').fadeOut(300, function() {
                     $(this).remove();
                 });
             }, 2000);

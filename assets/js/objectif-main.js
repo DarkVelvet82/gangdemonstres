@@ -19,9 +19,13 @@ jQuery(document).ready(function($) {
 
     console.log('🔍 Paramètres URL détectés:', {playerId, gameId, isCreator, playerCode, autoJoin});
 
-    // Auto-join via QR code
+    // Auto-join via QR code (une seule fois par session)
     if (playerCode && autoJoin === '1') {
-        ObjectifJoin.handleAutoJoin(playerCode);
+        const autoJoinKey = 'objectif_auto_joined_' + playerCode;
+        if (!sessionStorage.getItem(autoJoinKey)) {
+            sessionStorage.setItem(autoJoinKey, '1');
+            ObjectifJoin.handleAutoJoin(playerCode);
+        }
     }
 
     // Stocker les paramètres URL normaux
