@@ -10,8 +10,19 @@ require_once __DIR__ . '/../includes/front-header.php';
     <link rel="stylesheet" href="../assets/css/objectif.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
         .container {
             max-width: 500px;
+            width: 100%;
         }
 
         /* Boîte d'instruction didactique */
