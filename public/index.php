@@ -110,6 +110,52 @@ require_once __DIR__ . '/../includes/front-header.php';
             background: #e1e4e8;
         }
 
+        /* Partie en cours */
+        .current-game-section {
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(32, 134, 55, 0.1) 100%);
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .current-game-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9em;
+            color: #28a745;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .btn-resume {
+            background: linear-gradient(135deg, #28a745 0%, #208637 100%);
+            color: white;
+        }
+
+        .btn-resume:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-quit-game {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            font-size: 0.85em;
+            color: #dc3545;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .btn-quit-game:hover {
+            color: #a71d2a;
+        }
+
         /* Bouton installer */
         .install-section {
             margin-top: 30px;
@@ -265,7 +311,21 @@ require_once __DIR__ . '/../includes/front-header.php';
         <p>Bienvenue dans le générateur d'objectifs pour <?php echo htmlspecialchars($site_name); ?>! Créez une partie ou rejoignez-en une existante.</p>
 
         <div class="action-buttons">
-            <a href="creer-partie.php" class="action-btn btn-primary">
+            <!-- Section partie en cours (cachée par défaut, affichée via JS) -->
+            <div class="current-game-section" id="current-game-section" style="display: none;">
+                <div class="current-game-label">
+                    <span>🎮</span> Vous avez une partie en cours
+                </div>
+                <a href="#" class="action-btn btn-resume" id="btn-resume-game">
+                    Reprendre ma partie
+                </a>
+                <button type="button" class="btn-quit-game" id="btn-quit-game">
+                    Quitter cette partie
+                </button>
+            </div>
+
+            <!-- Bouton créer (caché si partie en cours) -->
+            <a href="creer-partie.php" class="action-btn btn-primary" id="btn-create-game">
                 Créer une nouvelle partie
             </a>
 
@@ -346,8 +406,74 @@ require_once __DIR__ . '/../includes/front-header.php';
         </div>
     </div>
 
+    <script src="../assets/js/app-config.js"></script>
     <script>
     (function() {
+        // ========== GESTION PARTIE EN COURS ==========
+        const currentGameSection = document.getElementById('current-game-section');
+        const btnResumeGame = document.getElementById('btn-resume-game');
+        const btnQuitGame = document.getElementById('btn-quit-game');
+        const btnCreateGame = document.getElementById('btn-create-game');
+
+        // Vérifier si une partie est en cours
+        const gameId = localStorage.getItem('objectif_game_id');
+        const playerId = localStorage.getItem('objectif_player_id');
+        const isCreator = localStorage.getItem('objectif_is_creator') === '1';
+
+        if (gameId && playerId) {
+            // Vérifier que la partie existe encore via API
+            fetch(window.objectif_ajax.ajax_url + 'game.php?action=status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'nonce=' + window.objectif_ajax.nonce + '&game_id=' + gameId
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Partie valide, afficher le bouton reprendre
+                    currentGameSection.style.display = 'block';
+                    btnCreateGame.style.display = 'none';
+
+                    // Lien vers la bonne page selon le rôle
+                    if (isCreator) {
+                        btnResumeGame.href = 'partie.php?id=' + gameId;
+                    } else {
+                        btnResumeGame.href = 'objectif.php';
+                    }
+                } else {
+                    // Partie invalide, nettoyer localStorage
+                    clearGameData();
+                }
+            })
+            .catch(() => {
+                // Erreur réseau, on laisse le bouton reprendre au cas où
+                currentGameSection.style.display = 'block';
+                btnCreateGame.style.display = 'none';
+                if (isCreator) {
+                    btnResumeGame.href = 'partie.php?id=' + gameId;
+                } else {
+                    btnResumeGame.href = 'objectif.php';
+                }
+            });
+        }
+
+        // Bouton quitter la partie
+        btnQuitGame.addEventListener('click', function() {
+            if (confirm('Voulez-vous vraiment quitter cette partie ? Vous pourrez toujours la rejoindre avec votre code.')) {
+                clearGameData();
+                currentGameSection.style.display = 'none';
+                btnCreateGame.style.display = 'block';
+            }
+        });
+
+        function clearGameData() {
+            localStorage.removeItem('objectif_game_id');
+            localStorage.removeItem('objectif_player_id');
+            localStorage.removeItem('objectif_is_creator');
+            localStorage.removeItem('objectif_creator_name');
+        }
+
+        // ========== GESTION PWA/INSTALLATION ==========
         const installBtn = document.getElementById('install-btn');
         const installModal = document.getElementById('install-modal');
         const installModalClose = document.getElementById('install-modal-close');
