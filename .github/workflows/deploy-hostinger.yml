@@ -43,8 +43,9 @@ jobs:
           # Home route first
           RewriteRule ^$ gang-de-monstres-standalone/public/ [L]
 
-          # Map assets, API, admin to app
+          # Map assets, API, admin, uploads to app
           RewriteRule ^assets/(.*)$ gang-de-monstres-standalone/assets/$1 [L]
+          RewriteRule ^uploads/(.*)$ gang-de-monstres-standalone/uploads/$1 [L]
           RewriteRule ^api/(.*)$ gang-de-monstres-standalone/api/$1 [L,QSA]
           RewriteRule ^admin/(.*)$ gang-de-monstres-standalone/admin/$1 [L]
 
