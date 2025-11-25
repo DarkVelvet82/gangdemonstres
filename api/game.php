@@ -45,6 +45,10 @@ try {
             get_full_game_status();
             break;
 
+        case 'cards':
+            get_game_cards();
+            break;
+
         default:
             send_json_response(false, [], 'Action non reconnue');
     }
@@ -552,5 +556,68 @@ function cancel_game() {
 
     send_json_response(true, [
         'message' => 'Partie annulée avec succès'
+    ]);
+}
+
+/**
+ * Récupérer les cartes des jeux/extensions d'une partie
+ */
+function get_game_cards() {
+    global $pdo;
+
+    $nonce = get_post_value('nonce');
+    if (!verify_nonce($nonce)) {
+        send_json_response(false, [], 'Nonce invalide');
+    }
+
+    $game_id = clean_int(get_post_value('game_id', 0));
+
+    if (!$game_id) {
+        send_json_response(false, [], 'ID de partie manquant');
+    }
+
+    // Récupérer la partie et sa configuration
+    $stmt = $pdo->prepare("SELECT game_config, game_set_id FROM " . DB_PREFIX . "games WHERE id = ?");
+    $stmt->execute([$game_id]);
+    $game = $stmt->fetch();
+
+    if (!$game) {
+        send_json_response(false, [], 'Partie introuvable');
+    }
+
+    // Récupérer les IDs des jeux/extensions
+    $game_config = json_decode($game['game_config'], true) ?: [];
+    $game_set_ids = array_merge(
+        [$game_config['base_game'] ?? $game['game_set_id']],
+        $game_config['extensions'] ?? []
+    );
+
+    // Récupérer les infos des jeux
+    $placeholders = implode(',', array_fill(0, count($game_set_ids), '?'));
+    $stmt = $pdo->prepare("SELECT id, name FROM " . DB_PREFIX . "game_sets WHERE id IN ($placeholders) ORDER BY is_extension ASC, name ASC");
+    $stmt->execute($game_set_ids);
+    $game_sets = $stmt->fetchAll();
+
+    // Récupérer les cartes pour chaque jeu/extension
+    $result = [];
+    foreach ($game_sets as $game_set) {
+        $stmt = $pdo->prepare("
+            SELECT c.id, c.name, c.card_type, c.image_url, c.power_text, c.has_eye, c.quantity
+            FROM " . DB_PREFIX . "cards c
+            WHERE c.game_set_id = ? AND c.is_visible = 1
+            ORDER BY c.display_order ASC, c.name ASC
+        ");
+        $stmt->execute([$game_set['id']]);
+        $cards = $stmt->fetchAll();
+
+        $result[] = [
+            'id' => $game_set['id'],
+            'name' => $game_set['name'],
+            'cards' => $cards
+        ];
+    }
+
+    send_json_response(true, [
+        'game_sets' => $result
     ]);
 }
