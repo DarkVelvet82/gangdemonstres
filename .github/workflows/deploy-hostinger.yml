@@ -30,7 +30,7 @@ jobs:
           # Copier tout le repo directement dans dist/ (sans sous-dossier)
           rsync -a --delete --exclude '.git' --exclude '.github' ./ dist/
 
-          # Root .htaccess for security + API routing
+          # Root .htaccess for security + routing
           cat > dist/.htaccess <<'HTACC'
           AddDefaultCharset UTF-8
           Options -Indexes
@@ -49,18 +49,11 @@ jobs:
           RewriteCond %{REQUEST_FILENAME} -d
           RewriteRule ^ - [L]
 
-          # API Routing
-          RewriteRule ^api/?$ api/index.php [L,QSA]
-          RewriteRule ^api/game/create$ api/game.php?action=create [L,QSA]
-          RewriteRule ^api/game/join$ api/game.php?action=join [L,QSA]
-          RewriteRule ^api/game/status$ api/game.php?action=status [L,QSA]
-          RewriteRule ^api/game/players$ api/game.php?action=players [L,QSA]
-          RewriteRule ^api/game/restart$ api/game.php?action=restart [L,QSA]
-          RewriteRule ^api/objective/generate$ api/player.php?action=generate [L,QSA]
-          RewriteRule ^api/objective/check$ api/player.php?action=check [L,QSA]
-          RewriteRule ^api/scores/save$ api/scores.php?action=save [L,QSA]
-          RewriteRule ^api/scores/get$ api/scores.php?action=get [L,QSA]
-          RewriteRule ^api/notifications/check$ api/scores.php?action=notifications [L,QSA]
+          # Home -> public/index.php
+          RewriteRule ^$ public/index.php [L]
+
+          # Tout le reste -> public/
+          RewriteRule ^(.*)$ public/$1 [L,QSA]
           HTACC
 
           # Write production DB secrets from GitHub secrets
