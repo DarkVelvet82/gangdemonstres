@@ -30,10 +30,11 @@ jobs:
           # Copier tout le repo directement dans dist/ (sans sous-dossier)
           rsync -a --delete --exclude '.git' --exclude '.github' ./ dist/
 
-          # Root .htaccess for clean URLs + security
+          # Root .htaccess for security + API routing
           cat > dist/.htaccess <<'HTACC'
           AddDefaultCharset UTF-8
           Options -Indexes
+
           <IfModule mod_headers.c>
             Header always set X-Frame-Options "SAMEORIGIN"
             Header set X-Content-Type-Options "nosniff"
@@ -43,16 +44,23 @@ jobs:
           RewriteEngine On
           RewriteBase /
 
-          # Home route -> public/
-          RewriteRule ^$ public/ [L]
-
           # Fichiers/dossiers existants servis directement
           RewriteCond %{REQUEST_FILENAME} -f [OR]
           RewriteCond %{REQUEST_FILENAME} -d
           RewriteRule ^ - [L]
 
-          # Tout le reste -> public/
-          RewriteRule ^(.*)$ public/$1 [L,QSA]
+          # API Routing
+          RewriteRule ^api/?$ api/index.php [L,QSA]
+          RewriteRule ^api/game/create$ api/game.php?action=create [L,QSA]
+          RewriteRule ^api/game/join$ api/game.php?action=join [L,QSA]
+          RewriteRule ^api/game/status$ api/game.php?action=status [L,QSA]
+          RewriteRule ^api/game/players$ api/game.php?action=players [L,QSA]
+          RewriteRule ^api/game/restart$ api/game.php?action=restart [L,QSA]
+          RewriteRule ^api/objective/generate$ api/player.php?action=generate [L,QSA]
+          RewriteRule ^api/objective/check$ api/player.php?action=check [L,QSA]
+          RewriteRule ^api/scores/save$ api/scores.php?action=save [L,QSA]
+          RewriteRule ^api/scores/get$ api/scores.php?action=get [L,QSA]
+          RewriteRule ^api/notifications/check$ api/scores.php?action=notifications [L,QSA]
           HTACC
 
           # Write production DB secrets from GitHub secrets
@@ -75,8 +83,8 @@ jobs:
         run: |
           echo "=== Contents of dist/ ==="
           ls -la dist/
-          echo "=== Contents of dist/public/ ==="
-          ls -la dist/public/ | head -20
+          echo "=== Contents of dist/admin/ ==="
+          ls -la dist/admin/ | head -20
 
       - name: Deploy via lftp to Hostinger
         run: |
