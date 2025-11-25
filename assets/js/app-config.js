@@ -2,9 +2,9 @@
 
 // Remplace les variables WordPress par des variables natives
 window.objectif_ajax = {
-    ajax_url: window.location.origin + '/gang-de-monstres-standalone/api/',
+    ajax_url: window.location.origin + '/api/',
     nonce: 'standalone_nonce_' + Date.now(),
-    objectif_url: window.location.origin + '/gang-de-monstres-standalone/public/objectif.php'
+    objectif_url: window.location.origin + '/objectif.php'
 };
 
 // Adapter jQuery pour compatibilité

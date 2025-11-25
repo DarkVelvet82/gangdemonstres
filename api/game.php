@@ -171,7 +171,7 @@ function create_game() {
         ];
     }
 
-    $join_page_url = get_app_url('public/rejoindre.php');
+    $join_page_url = get_app_url('rejoindre.php');
 
     $difficulty_names = [
         'easy' => '🟢 Facile',
@@ -495,7 +495,7 @@ function get_full_game_status() {
         ];
     }
 
-    $join_page_url = get_app_url('public/rejoindre.php');
+    $join_page_url = get_app_url('rejoindre.php');
 
     send_json_response(true, [
         'game_id' => intval($game_id),
