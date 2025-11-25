@@ -383,7 +383,7 @@ window.ObjectifNotifications = (function($) {
                 text-align: center;
             ">
                 <div style="margin-bottom: 20px;">
-                    <span style="font-size: 48px;">👋</span>
+                    <img src="../assets/images/mitard.jpg" alt="" style="width: 100%; max-width: 280px; height: auto; border-radius: 8px;">
                 </div>
 
                 <h3 style="margin: 0 0 15px 0; color: #333; font-size: 22px;">
@@ -395,7 +395,7 @@ window.ObjectifNotifications = (function($) {
                         <strong>${notification.closed_by}</strong> a mis fin à la session.
                     </p>
                     <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
-                        Merci d'avoir joué ! À bientôt 🎮
+                        Merci d'avoir joué ! À bientôt
                     </p>
                     <p style="margin: 10px 0 0 0; font-size: 14px; color: #555;">
                         Merci de nous laisser un avis sur Google :
@@ -420,7 +420,7 @@ window.ObjectifNotifications = (function($) {
                     </a>
                     <a href="index.php" class="session-closed-btn" style="
                         display: inline-block;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        background: linear-gradient(135deg, #003f53 0%, #003547 100%);
                         color: white;
                         border: none;
                         padding: 14px 28px;
@@ -431,7 +431,7 @@ window.ObjectifNotifications = (function($) {
                         text-decoration: none;
                         transition: transform 0.2s, box-shadow 0.2s;
                     ">
-                        🏠 Retour à l'accueil
+                        Retour à l'accueil
                     </a>
                 </div>
             </div>

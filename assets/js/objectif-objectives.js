@@ -123,7 +123,8 @@ window.ObjectifObjectives = (function($) {
                     if (response.data.game_status === 'ended' || response.data.game_status === 'terminated') {
                         console.log('🛑 Partie terminée, affichage message d\'attente');
 
-                        // Masquer le bouton de génération
+                        // Masquer le bouton de génération et le header welcome
+                        $('body').addClass('session-ended');
                         $('.objective-generator').hide();
 
                         // Afficher le message d'attente
@@ -174,7 +175,9 @@ window.ObjectifObjectives = (function($) {
                             objective: response.data.objective,
                             player_name: response.data.player_name,
                             pictos: response.data.pictos,
-                            already_generated: true
+                            already_generated: true,
+                            is_special_objective: response.data.is_special_objective,
+                            special_image: response.data.special_image
                         });
 
                         // Démarrer les notifications
@@ -182,13 +185,18 @@ window.ObjectifObjectives = (function($) {
                             ObjectifNotifications.startNotificationChecking();
                         }
                     } else {
-                        // Vérifier si on doit auto-générer (paramètre URL)
+                        // Auto-générer si demandé par URL OU si c'est le créateur
                         const urlParams = new URLSearchParams(window.location.search);
-                        if (urlParams.get('auto_generate') === '1') {
-                            console.log('🚀 Auto-génération demandée, lancement...');
+                        const isCreator = localStorage.getItem('objectif_is_creator') === '1';
+
+                        if (urlParams.get('auto_generate') === '1' || isCreator) {
+                            console.log('🚀 Auto-génération (créateur ou paramètre URL), lancement...');
                             generateObjective();
                         } else {
-                            console.log('ℹ️ Pas d\'objectif existant, attente du clic sur Générer');
+                            // Joueur non-créateur : afficher le bouton pour générer manuellement
+                            console.log('ℹ️ Pas d\'objectif existant, affichage du bouton Générer');
+                            $('.objective-generator').show();
+                            $('#sticky-objective').show();
                         }
                     }
                 }

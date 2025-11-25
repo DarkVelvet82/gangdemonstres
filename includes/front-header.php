@@ -22,11 +22,14 @@ function is_mobile_device() {
 }
 
 // Rediriger les non-mobiles (sauf si on est déjà sur la page mobile-only)
+// TEMPORAIREMENT DÉSACTIVÉ pour test PC
+/*
 $current_page = basename($_SERVER['PHP_SELF'] ?? '');
 if (!is_mobile_device() && $current_page !== 'mobile-only.php') {
     header('Location: mobile-only.php');
     exit;
 }
+*/
 
 // Récupérer les paramètres du site
 function get_front_setting($pdo, $key, $default = '') {

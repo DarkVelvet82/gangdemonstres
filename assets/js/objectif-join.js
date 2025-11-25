@@ -31,23 +31,21 @@ window.ObjectifJoin = (function($) {
     function handleJoinSuccess(response) {
         if (response.success) {
             console.log('🔍 Réponse du serveur:', response.data);
-            
+
             // Stocker les données
             localStorage.setItem('objectif_player_id', response.data.player_id);
             localStorage.setItem('objectif_game_id', response.data.game_id);
             const isCreator = response.data.is_creator ? '1' : '0';
             localStorage.setItem('objectif_is_creator', isCreator);
 
-            $('#objectif-join-result').html('<p>Connexion réussie ! Vous pouvez maintenant générer votre objectif.</p>');
-
-            // Créer le lien de redirection
+            // Redirection directe vers la page d'objectif
             if (objectif_ajax.objectif_url) {
                 const redirectUrl = objectif_ajax.objectif_url
                     + '?player_id=' + response.data.player_id
                     + '&game_id=' + response.data.game_id
                     + '&creator=' + response.data.is_creator;
 
-                $('#objectif-redirect').html('<a href="' + redirectUrl + '" class="objectif-go">➡️ Aller à ma page d\'objectif</a>');
+                window.location.href = redirectUrl;
             }
         } else {
             AppModal.alert(response.data || 'Code invalide ou partie non trouvée', {

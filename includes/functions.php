@@ -3,13 +3,11 @@
 
 /**
  * Normaliser un chemin d'image pour qu'il fonctionne depuis n'importe où
- * Convertit ../assets/... en /assets/...
+ * Garde le chemin relatif ../assets/ car la page objectif.php est dans /public/
  */
 function normalize_image_url($url) {
     if (empty($url)) return $url;
-    if (strpos($url, '../assets/') === 0) {
-        return str_replace('../assets/', '/assets/', $url);
-    }
+    // Garder le chemin relatif tel quel car il fonctionne depuis /public/objectif.php
     return $url;
 }
 

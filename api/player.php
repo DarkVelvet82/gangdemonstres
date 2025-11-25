@@ -509,6 +509,18 @@ function check_objective() {
     $stmt->execute([$player['game_id']]);
     $game = $stmt->fetch();
 
+    // Vérifier si c'est un objectif spécial
+    $is_special = isset($objective['_special_id']);
+    $special_image = null;
+
+    if ($is_special && $game) {
+        $special_id = $objective['_special_id'];
+        $stmt = $pdo->prepare("SELECT image_url FROM " . DB_PREFIX . "special_objective_images
+            WHERE special_objective_id = ? AND player_count = ?");
+        $stmt->execute([$special_id, $game['player_count']]);
+        $special_image = normalize_image_url($stmt->fetchColumn());
+    }
+
     $pictos_v2 = [];
 
     if ($game) {
@@ -554,7 +566,9 @@ function check_objective() {
         'generated_at' => $player['generated_at'],
         'has_objective' => true,
         'game_status' => $game_status,
-        'creator_name' => $creator_name
+        'creator_name' => $creator_name,
+        'is_special_objective' => $is_special,
+        'special_image' => $special_image
     ]);
 }
 

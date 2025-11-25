@@ -685,13 +685,29 @@ window.ObjectifScores = (function($) {
         localStorage.removeItem('objectif_game_id');
         localStorage.removeItem('objectif_is_creator');
 
-        // Masquer le bloc de génération d'objectif
+        // Masquer le bloc de génération d'objectif et le header
+        $('body').addClass('session-ended');
         $('.objective-generator').hide();
+        $('#sticky-objective').hide();
 
         $('#objectif-state').html(`
-            <div class="objectif-quit-success">
+            <div class="objectif-quit-success" style="text-align: center;">
                 <h3>👋 Session terminée</h3>
                 <p>Merci d'avoir joué !</p>
+                <p style="color: #555; margin: 15px 0 10px 0; font-size: 14px;">
+                    Merci de nous laisser un avis sur Google :
+                </p>
+                <a href="https://www.google.com/maps/place//data=!4m3!3m2!1s0x682068fe27ee1531:0xe09a89dc6aeb165c!12e1" target="_blank" style="
+                    display: inline-block;
+                    margin-bottom: 15px;
+                    padding: 12px 24px;
+                    background: #4285F4;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: 600;
+                ">⭐ Laisser un avis Google</a>
+                <br>
                 <a href="index.php" class="objectif-button objectif-primary">🏠 Retour à l'accueil</a>
             </div>
         `);

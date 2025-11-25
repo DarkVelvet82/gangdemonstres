@@ -39,11 +39,22 @@
 })();
 
 // Remplace les variables WordPress par des variables natives
-window.objectif_ajax = {
-    ajax_url: window.location.origin + '/api/',
-    nonce: 'standalone_nonce_' + Date.now(),
-    objectif_url: window.location.origin + '/objectif.php'
-};
+// Détecter le chemin de base automatiquement (pour local vs prod)
+(function() {
+    const path = window.location.pathname;
+    // Trouver le dossier de base (ex: /gang-de-monstres-standalone/public/...)
+    const match = path.match(/^(\/[^/]+)?\/public\//);
+    const basePath = match ? (match[1] || '') : '';
+
+    window.objectif_ajax = {
+        ajax_url: window.location.origin + basePath + '/api/',
+        nonce: 'standalone_nonce_' + Date.now(),
+        objectif_url: window.location.origin + basePath + '/public/objectif.php'
+    };
+
+    console.log('📍 Base path détecté:', basePath || '(racine)');
+    console.log('📍 API URL:', window.objectif_ajax.ajax_url);
+})();
 
 // Adapter jQuery pour compatibilité
 (function() {

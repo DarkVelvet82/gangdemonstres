@@ -404,7 +404,7 @@ require_once __DIR__ . '/../includes/front-header.php';
                 <p class="welcome-subtitle">On te souhaite bonne chance pour cette partie !</p>
             </div>
 
-            <div class="objective-generator">
+            <div class="objective-generator" style="display: none;">
                 <div class="instruction-box">
                     <p class="instruction-text">La partie va commencer ! Génère ton objectif secret en cliquant sur le bouton ci-dessous.</p>
                     <div class="arrow-down">&#8595;</div>
