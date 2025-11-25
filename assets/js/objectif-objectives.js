@@ -42,7 +42,15 @@ window.ObjectifObjectives = (function($) {
         console.log('🔍 checkExistingObjective - playerId:', playerId);
 
         if (!playerId) {
-            console.log('❌ Pas de player_id, abandon');
+            console.log('❌ Pas de player_id, affichage écran session terminée');
+
+            // Pas de player_id = pas de session active, afficher l'écran de fin
+            $('.objective-generator').hide();
+            $('#sticky-objective').hide();
+            $('.welcome-section').hide();
+
+            const sessionEndedHtml = generateSessionEndedHTML();
+            $('#objectif-state').html(sessionEndedHtml);
             return;
         }
 
