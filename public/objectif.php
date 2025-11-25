@@ -396,7 +396,7 @@ require_once __DIR__ . '/../includes/front-header.php';
         <div class="objectif-player-zone modern-objective-page">
             <div class="welcome-section">
                 <h1 id="welcome-message" class="welcome-title">Bienvenue !</h1>
-                <p class="welcome-subtitle">On vous souhaite bonne chance lors de cette partie.</p>
+                <p class="welcome-subtitle">On te souhaite bonne chance pour cette partie !</p>
             </div>
 
             <div class="objective-generator">
