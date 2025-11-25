@@ -27,6 +27,9 @@ jobs:
           set -e
           mkdir -p dist
 
+          # Copier tout le repo directement dans dist/ (sans sous-dossier)
+          rsync -a --delete --exclude '.git' --exclude '.github' ./ dist/
+
           # Root .htaccess for clean URLs + security
           cat > dist/.htaccess <<'HTACC'
           AddDefaultCharset UTF-8
@@ -40,50 +43,40 @@ jobs:
           RewriteEngine On
           RewriteBase /
 
-          # Home route first
-          RewriteRule ^$ gang-de-monstres-standalone/public/ [L]
+          # Home route -> public/
+          RewriteRule ^$ public/ [L]
 
-          # Map assets, API, admin, uploads to app
-          RewriteRule ^assets/(.*)$ gang-de-monstres-standalone/assets/$1 [L]
-          RewriteRule ^uploads/(.*)$ gang-de-monstres-standalone/uploads/$1 [L]
-          RewriteRule ^api/(.*)$ gang-de-monstres-standalone/api/$1 [L,QSA]
-          RewriteRule ^admin/(.*)$ gang-de-monstres-standalone/admin/$1 [L]
-
-          # Serve existing files/dirs
-          RewriteCond %{REQUEST_URI} !^/gang-de-monstres-standalone/
+          # Fichiers/dossiers existants servis directement
           RewriteCond %{REQUEST_FILENAME} -f [OR]
           RewriteCond %{REQUEST_FILENAME} -d
           RewriteRule ^ - [L]
 
-          # Fallback to app public
-          RewriteRule ^(.*)$ gang-de-monstres-standalone/public/$1 [L,QSA]
+          # Tout le reste -> public/
+          RewriteRule ^(.*)$ public/$1 [L,QSA]
           HTACC
 
-          # Copy the repository into a subfolder as deployed structure
-          rsync -a --delete --exclude '.git' ./ dist/gang-de-monstres-standalone/
-
-          # Write production DB secrets from GitHub secrets (optional)
-          mkdir -p dist/gang-de-monstres-standalone/config
+          # Write production DB secrets from GitHub secrets
+          mkdir -p dist/config
           if [ -n "${DB_HOST}" ] && [ -n "${DB_NAME}" ] && [ -n "${DB_USER}" ] && [ -n "${DB_PASS}" ]; then
-            echo "<?php" > dist/gang-de-monstres-standalone/config/secrets.php
-            echo "if (!defined('DB_HOST')) define('DB_HOST', '${DB_HOST}');" >> dist/gang-de-monstres-standalone/config/secrets.php
-            echo "if (!defined('DB_NAME')) define('DB_NAME', '${DB_NAME}');" >> dist/gang-de-monstres-standalone/config/secrets.php
-            echo "if (!defined('DB_USER')) define('DB_USER', '${DB_USER}');" >> dist/gang-de-monstres-standalone/config/secrets.php
-            echo "if (!defined('DB_PASS')) define('DB_PASS', '${DB_PASS}');" >> dist/gang-de-monstres-standalone/config/secrets.php
+            echo "<?php" > dist/config/secrets.php
+            echo "if (!defined('DB_HOST')) define('DB_HOST', '${DB_HOST}');" >> dist/config/secrets.php
+            echo "if (!defined('DB_NAME')) define('DB_NAME', '${DB_NAME}');" >> dist/config/secrets.php
+            echo "if (!defined('DB_USER')) define('DB_USER', '${DB_USER}');" >> dist/config/secrets.php
+            echo "if (!defined('DB_PASS')) define('DB_PASS', '${DB_PASS}');" >> dist/config/secrets.php
           else
             echo "[deploy] DB secrets not set; skipping secrets.php"
           fi
 
           # Protections dossiers sensibles
-          echo 'Require all denied' > dist/gang-de-monstres-standalone/config/.htaccess
-          echo 'Require all denied' > dist/gang-de-monstres-standalone/includes/.htaccess
+          echo 'Require all denied' > dist/config/.htaccess
+          echo 'Require all denied' > dist/includes/.htaccess
 
       - name: List dist contents (debug)
         run: |
           echo "=== Contents of dist/ ==="
           ls -la dist/
-          echo "=== Contents of dist/gang-de-monstres-standalone/ ==="
-          ls -la dist/gang-de-monstres-standalone/ | head -20
+          echo "=== Contents of dist/public/ ==="
+          ls -la dist/public/ | head -20
 
       - name: Deploy via lftp to Hostinger
         run: |
@@ -94,4 +87,3 @@ jobs:
           mirror -R --verbose --only-newer --no-perms ./dist/ ./
           quit
           EOF
-

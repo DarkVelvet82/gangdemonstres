@@ -149,6 +149,10 @@ function generate_objective() {
                 WHERE special_objective_id = ? AND player_count = ?");
             $stmt->execute([$special_id, $game['player_count']]);
             $special_image = $stmt->fetchColumn();
+            // Convertir le chemin relatif admin vers chemin absolu
+            if ($special_image && strpos($special_image, '../assets/') === 0) {
+                $special_image = str_replace('../assets/', '/assets/', $special_image);
+            }
         }
 
         send_json_response(true, [
