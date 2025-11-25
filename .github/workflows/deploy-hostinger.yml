@@ -44,15 +44,20 @@ jobs:
           RewriteEngine On
           RewriteBase /
 
-          # Fichiers/dossiers existants servis directement
-          RewriteCond %{REQUEST_FILENAME} -f [OR]
-          RewriteCond %{REQUEST_FILENAME} -d
-          RewriteRule ^ - [L]
-
           # Home -> public/index.php
           RewriteRule ^$ public/index.php [L]
 
+          # Fichiers existants servis directement (sauf dossier public/)
+          RewriteCond %{REQUEST_FILENAME} -f
+          RewriteRule ^ - [L]
+
+          # Dossiers existants servis directement (sauf public/)
+          RewriteCond %{REQUEST_FILENAME} -d
+          RewriteCond %{REQUEST_URI} !^/public
+          RewriteRule ^ - [L]
+
           # Tout le reste -> public/
+          RewriteCond %{REQUEST_URI} !^/public
           RewriteRule ^(.*)$ public/$1 [L,QSA]
           HTACC
 
