@@ -115,7 +115,13 @@ window.ObjectifJoin = (function($) {
                 </div>
             `);
 
-            $('body').append($toast);
+            // Utiliser le conteneur dédié s'il existe, sinon body
+            const $notifRoot = $('#notifications-root');
+            if ($notifRoot.length) {
+                $notifRoot.append($toast);
+            } else {
+                $('body').append($toast);
+            }
 
             // Disparaît après 2 secondes
             setTimeout(function() {

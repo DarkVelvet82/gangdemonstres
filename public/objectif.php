@@ -10,14 +10,42 @@ require_once __DIR__ . '/../includes/front-header.php';
     <link rel="stylesheet" href="../assets/css/objectif.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        html, body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            margin: 0;
             padding: 20px;
             box-sizing: border-box;
+        }
+
+        /* S'assurer que les overlays/notifications ne sont pas affectés par le flexbox */
+        .notification-overlay,
+        .game-notification,
+        .auto-join-toast {
+            position: fixed !important;
+        }
+
+        .notification-overlay {
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+
+        .game-notification.session-closed {
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
         }
 
         .container {
@@ -361,6 +389,9 @@ require_once __DIR__ . '/../includes/front-header.php';
     </style>
 </head>
 <body>
+    <!-- Conteneur pour les notifications (hors du flux flex) -->
+    <div id="notifications-root" style="position: fixed; top: 0; left: 0; width: 0; height: 0; z-index: 9998;"></div>
+
     <div class="container">
         <div class="objectif-player-zone modern-objective-page">
             <div class="welcome-section">

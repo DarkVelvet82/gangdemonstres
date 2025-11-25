@@ -180,7 +180,13 @@ window.ObjectifNotifications = (function($) {
             </div>
         `;
 
-        $('body').append(notificationHtml);
+        // Utiliser le conteneur dédié s'il existe, sinon body
+        const $notifRoot = $('#notifications-root');
+        if ($notifRoot.length) {
+            $notifRoot.append(notificationHtml);
+        } else {
+            $('body').append(notificationHtml);
+        }
 
         // Fonction pour afficher le message d'attente
         function showWaitingMessage() {
@@ -305,7 +311,13 @@ window.ObjectifNotifications = (function($) {
             </div>
         `;
 
-        $('body').append(notificationHtml);
+        // Utiliser le conteneur dédié s'il existe, sinon body
+        const $notifRoot = $('#notifications-root');
+        if ($notifRoot.length) {
+            $notifRoot.append(notificationHtml);
+        } else {
+            $('body').append(notificationHtml);
+        }
 
         // Auto-fermeture après 15 secondes
         setTimeout(() => {
@@ -407,7 +419,13 @@ window.ObjectifNotifications = (function($) {
             </div>
         `;
 
-        $('body').append(notificationHtml);
+        // Utiliser le conteneur dédié s'il existe, sinon body
+        const $notifRoot = $('#notifications-root');
+        if ($notifRoot.length) {
+            $notifRoot.append(notificationHtml);
+        } else {
+            $('body').append(notificationHtml);
+        }
 
         // Nettoyer le localStorage
         localStorage.removeItem('objectif_player_id');
