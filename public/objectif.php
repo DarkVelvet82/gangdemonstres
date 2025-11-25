@@ -386,6 +386,11 @@ require_once __DIR__ . '/../includes/front-header.php';
             padding: 40px;
             color: #999;
         }
+
+        /* Session terminée - cacher le header */
+        body.session-ended .welcome-section {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
