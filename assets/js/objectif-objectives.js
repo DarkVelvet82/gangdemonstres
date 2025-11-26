@@ -292,8 +292,9 @@ window.ObjectifObjectives = (function($) {
             $('#welcome-message').text(getWelcomeMessage(data.player_name));
         }
 
-        // Masquer la section de génération (bouton + titre "Votre objectif à réaliser")
+        // Masquer la section de génération et le bouton sticky
         $('.objective-generator').fadeOut(300);
+        $('#sticky-objective').hide();
 
         let html;
 
