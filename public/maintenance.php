@@ -152,7 +152,7 @@ header('Retry-After: 3600'); // Suggérer de réessayer dans 1 heure
         <?php endif; ?>
 
         <p class="maintenance-text">
-            <?php echo nl2br(htmlspecialchars($maintenance_text)); ?>
+            <?php echo nl2br(strip_tags($maintenance_text, '<b><strong>')); ?>
         </p>
 
         <?php if ($maintenance_button_text && $maintenance_button_url): ?>
