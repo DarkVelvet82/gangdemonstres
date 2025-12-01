@@ -376,6 +376,9 @@ $_site_name = get_site_setting($pdo, 'site_name', 'Gang de Monstres');
             <a href="settings.php" class="nav-item <?php echo $current_page === 'settings.php' ? 'active' : ''; ?>">
                 <span class="icon">⚙️</span> Paramètres
             </a>
+            <a href="maintenance.php" class="nav-item <?php echo $current_page === 'maintenance.php' ? 'active' : ''; ?>">
+                <span class="icon">🔧</span> Maintenance
+            </a>
         </nav>
 
         <div class="sidebar-footer">

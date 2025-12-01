@@ -31,6 +31,19 @@ if (!is_mobile_device() && $current_page !== 'mobile-only.php') {
 }
 */
 
+// Créer la table settings si elle n'existe pas
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "settings` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `setting_key` VARCHAR(100) NOT NULL UNIQUE,
+        `setting_value` TEXT,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+} catch (Exception $e) {
+    // Table existe déjà ou erreur ignorée
+}
+
 // Récupérer les paramètres du site
 function get_front_setting($pdo, $key, $default = '') {
     try {
@@ -41,6 +54,15 @@ function get_front_setting($pdo, $key, $default = '') {
     } catch (Exception $e) {
         return $default;
     }
+}
+
+// Vérifier le mode maintenance
+$current_page = basename($_SERVER['PHP_SELF'] ?? '');
+$maintenance_enabled = get_front_setting($pdo, 'maintenance_enabled', '0') === '1';
+
+if ($maintenance_enabled && $current_page !== 'maintenance.php') {
+    header('Location: maintenance.php');
+    exit;
 }
 
 $site_logo = get_front_setting($pdo, 'site_logo', '');
