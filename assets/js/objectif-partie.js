@@ -107,21 +107,45 @@ window.ObjectifPartie = (function($) {
             window.showViewObjectiveSticky(allJoined);
         }
 
-        // Générer les QR codes
+        // Générer le QR code général
         setTimeout(function() {
             if (typeof ObjectifQR !== 'undefined') {
                 ObjectifQR.generateQRCode(data.join_page_url, 'qr-code-container');
+            }
+        }, 500);
 
-                playersData.forEach(function(player, index) {
-                    if (!player.has_joined) {
+        // Event listener pour l'accordéon
+        $(document).off('click', '.player-accordion-header').on('click', '.player-accordion-header', function() {
+            const $item = $(this).closest('.player-accordion-item');
+
+            // Ne pas ouvrir si le joueur est déjà connecté
+            if ($item.hasClass('joined')) {
+                return;
+            }
+
+            const wasOpen = $item.hasClass('open');
+            const index = $item.data('index');
+
+            // Fermer tous les autres accordéons
+            $('.player-accordion-item').removeClass('open');
+
+            // Ouvrir celui-ci si il n'était pas déjà ouvert
+            if (!wasOpen) {
+                $item.addClass('open');
+
+                // Générer le QR code pour ce joueur si pas encore fait
+                const $qrContainer = $item.find('.player-qr');
+                if ($qrContainer.length && $qrContainer.children().length === 0) {
+                    const player = playersData[index];
+                    if (player && !player.has_joined) {
                         const playerUrl = objectif_ajax.objectif_url
                             + '?player_code=' + player.code
                             + '&auto_join=1';
                         ObjectifQR.generateQRCode(playerUrl, `qr-player-${index}`);
                     }
-                });
+                }
             }
-        }, 500);
+        });
 
         // Event listener pour annuler
         $('#cancel-game-btn').on('click', function() {
@@ -161,7 +185,7 @@ window.ObjectifPartie = (function($) {
         let html = `
             <div class="other-players-codes">
                 <h4>🎫 Codes pour les autres joueurs :</h4>
-                <div class="players-grid">
+                <div class="players-accordion">
         `;
 
         players.forEach(function(player, index) {
@@ -169,24 +193,29 @@ window.ObjectifPartie = (function($) {
             const statusText = player.has_joined ? '✓ Connecté' : '⏳ En attente';
 
             html += `
-                <div class="player-card ${statusClass}">
-                    <h5>${escapeHtml(player.name)}</h5>
+                <div class="player-accordion-item ${statusClass}" data-index="${index}">
+                    <div class="player-accordion-header">
+                        <h5>${escapeHtml(player.name)}</h5>
+                        <div class="player-header-info">
+                            <span class="player-status ${statusClass}">${statusText}</span>
+                            <span class="accordion-toggle">▼</span>
+                        </div>
+                    </div>
             `;
 
             if (!player.has_joined) {
                 html += `
-                    <div class="player-code-display">
-                        <strong class="player-code">${player.code}</strong>
+                    <div class="player-accordion-content">
+                        <div class="player-code-display">
+                            <strong class="player-code">${player.code}</strong>
+                        </div>
+                        <div class="player-qr" id="qr-player-${index}"></div>
+                        <p class="qr-instruction">Scanner pour connexion directe</p>
                     </div>
-                    <div class="player-qr" id="qr-player-${index}"></div>
-                    <p class="qr-instruction">Scanner pour connexion directe</p>
                 `;
             }
 
-            html += `
-                    <span class="player-status ${statusClass}">${statusText}</span>
-                </div>
-            `;
+            html += `</div>`;
         });
 
         html += `</div></div>`;
@@ -243,19 +272,19 @@ window.ObjectifPartie = (function($) {
         // Vérifier si tous les joueurs sont connectés
         const allJoined = data.players && data.players.every(p => p.has_joined);
 
-        // Mettre à jour les cartes des joueurs
+        // Mettre à jour les items accordéon des joueurs
         if (data.players) {
             data.players.forEach(function(player, index) {
-                const $card = $(`.player-card`).eq(index);
-                if ($card.length) {
-                    const wasJoined = $card.hasClass('joined');
+                const $item = $(`.player-accordion-item[data-index="${index}"]`);
+                if ($item.length) {
+                    const wasJoined = $item.hasClass('joined');
                     const isNowJoined = player.has_joined;
 
                     if (!wasJoined && isNowJoined) {
                         // Le joueur vient de rejoindre
-                        $card.removeClass('pending').addClass('joined');
-                        $card.find('.player-code-display, .player-qr, .qr-instruction').remove();
-                        $card.find('.player-status')
+                        $item.removeClass('pending open').addClass('joined');
+                        $item.find('.player-accordion-content').remove();
+                        $item.find('.player-status')
                             .removeClass('pending')
                             .addClass('joined')
                             .text('✓ Connecté');
@@ -265,8 +294,9 @@ window.ObjectifPartie = (function($) {
             playersData = data.players;
         }
 
-        // Masquer le QR code général si tous les joueurs sont connectés
+        // Masquer les codes et QR code général si tous les joueurs sont connectés
         if (allJoined) {
+            $('.other-players-codes').hide();
             $('.qr-code-section').hide();
         }
 

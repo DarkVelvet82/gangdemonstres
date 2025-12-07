@@ -56,11 +56,14 @@ function get_front_setting($pdo, $key, $default = '') {
     }
 }
 
-// Vérifier le mode maintenance
+// Vérifier le mode maintenance (sauf pour les pages admin et en local)
 $current_page = basename($_SERVER['PHP_SELF'] ?? '');
+$current_path = $_SERVER['PHP_SELF'] ?? '';
+$is_admin_page = strpos($current_path, '/admin/') !== false;
+$is_local = (strpos($_SERVER['HTTP_HOST'] ?? '', '.local') !== false);
 $maintenance_enabled = get_front_setting($pdo, 'maintenance_enabled', '0') === '1';
 
-if ($maintenance_enabled && $current_page !== 'maintenance.php') {
+if ($maintenance_enabled && $current_page !== 'maintenance.php' && !$is_admin_page && !$is_local) {
     header('Location: maintenance.php');
     exit;
 }

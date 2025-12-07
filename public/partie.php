@@ -145,53 +145,130 @@ $game_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
             color: #003f53;
         }
 
-        .players-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            justify-content: center;
-            gap: 15px;
+        /* Accordéon joueurs */
+        .players-accordion {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .player-card {
+        .player-accordion-item {
             background: white;
             border: 2px solid #e1e4e8;
             border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .player-accordion-item.joined {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .player-accordion-item.pending {
+            border-color: #ffc107;
+            background: #fffbeb;
+        }
+
+        .player-accordion-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             padding: 15px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .player-accordion-header:hover {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .player-accordion-item.joined .player-accordion-header {
+            cursor: default;
+        }
+
+        .player-accordion-header h5 {
+            margin: 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .player-header-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-status {
+            font-size: 0.85em;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+
+        .player-status.joined {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .player-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .accordion-toggle {
+            font-size: 20px;
+            transition: transform 0.3s;
+            color: #666;
+        }
+
+        .player-accordion-item.open .accordion-toggle {
+            transform: rotate(180deg);
+        }
+
+        .player-accordion-item.joined .accordion-toggle {
+            display: none;
+        }
+
+        .player-accordion-content {
+            display: none;
+            padding: 0 15px 20px;
             text-align: center;
         }
 
-        .player-card h5 {
-            margin: 0 0 10px 0;
-            color: #333;
+        .player-accordion-item.open .player-accordion-content {
+            display: block;
         }
 
         .player-code-display {
             background: #f7f8fa;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .player-code {
-            font-size: 1.5em;
+            font-size: 1.8em;
             color: #003f53;
             font-family: monospace;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
         }
 
         .player-qr {
-            margin: 10px auto;
+            margin: 15px auto;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            display: inline-block;
         }
 
         .player-qr canvas {
-            max-width: 100%;
+            max-width: 200px;
             height: auto;
         }
 
         .qr-instruction {
-            font-size: 0.85em;
+            font-size: 0.9em;
             color: #666;
-            margin: 5px 0 0 0;
+            margin: 10px 0 0 0;
         }
 
         .qr-code-section {
@@ -225,45 +302,8 @@ $game_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
             color: #003f53;
         }
 
-        /* Player join status */
-        .player-card.joined {
-            border-color: #28a745;
-            background: #f0fff4;
-        }
-
-        .player-card.pending {
-            border-color: #ffc107;
-            background: #fffbeb;
-        }
-
-        .player-status {
-            font-size: 0.85em;
-            padding: 5px 10px;
-            border-radius: 20px;
-            margin-top: 10px;
-            display: inline-block;
-        }
-
-        .player-status.joined {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .player-status.pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
         /* Mobile adjustments */
         @media (max-width: 768px) {
-            .players-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .player-code {
-                font-size: 1.2em;
-            }
-
             /* Padding en bas pour le sticky */
             .partie-container {
                 padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
